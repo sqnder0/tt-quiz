@@ -95,6 +95,12 @@ body {
   font-weight: bold;
 }
 
+.join__reconnect {
+  margin: 0.4rem 0 0;
+  color: var(--ink-dim);
+  font-size: 1rem;
+}
+
 /* --- 2. lobby ------------------------------------------------------------ */
 
 .lobby__check {

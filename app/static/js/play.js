@@ -31,6 +31,7 @@
     nameInput: $("nameInput"),
     joinButton: $("joinButton"),
     joinError: $("joinError"),
+    joinReconnect: $("joinReconnect"),
     joinTitle: $("joinTitle"),
     joinSub: $("joinSub"),
     lobbyName: $("lobbyName"),
@@ -100,17 +101,33 @@
     });
   }
 
+  function showJoinForm() {
+    el.joinForm.hidden = false;
+    el.joinReconnect.hidden = true;
+  }
+
+  function showReconnect(message) {
+    el.joinForm.hidden = true;
+    el.joinReconnect.textContent = message;
+    el.joinReconnect.hidden = false;
+    show("join");
+  }
+
   // --- verbinding ---------------------------------------------------------
 
   socket = new QuizSocket({
     path: "/ws/play",
-    onStatus: QuizUI.statusBinder(el.conn, el.connText),
+    onStatus: function (status) {
+      QuizUI.statusBinder(el.conn, el.connText)(status);
+      if (store(STORE_TOKEN)) showReconnect("Opnieuw verbinden…");
+    },
     onOpen: function () {
       var savedToken = store(STORE_TOKEN);
       var savedId = store(STORE_ID);
       var savedName = store(STORE_NAME);
       if (savedToken || savedId || savedName) {
         joining = true;
+        if (savedToken) showReconnect("Opnieuw verbinden…");
         socket.send({
           t: "join",
           name: savedName || "",
@@ -149,6 +166,7 @@
   function onError(msg) {
     if (msg.code === "join_failed") {
       joining = false;
+      showJoinForm();
       el.joinError.textContent = msg.message;
       el.joinButton.disabled = false;
       show("join");
@@ -158,6 +176,7 @@
       store(STORE_TOKEN, null);
       store(STORE_ID, null);
       playerId = null;
+      showJoinForm();
       show("join");
       return;
     }
@@ -198,6 +217,7 @@
     el.joinError.textContent = "";
     el.joinButton.disabled = true;
     joining = true;
+    showJoinForm();
     store(STORE_NAME, name);
     var savedToken = store(STORE_TOKEN);
     if (
@@ -311,9 +331,11 @@
         store(STORE_ID, null);
         playerId = null;
         removed = false;
+        showJoinForm();
         toast("De leiding heeft je uit de quiz gehaald.", "bad");
         show("join");
       } else if (!playerId && !joining) {
+        showJoinForm();
         show("join");
       }
       return;
