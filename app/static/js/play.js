@@ -91,6 +91,8 @@
       store(STORE_ID, msg.player_id);
       store(STORE_NAME, msg.name);
       el.nameInput.value = msg.name;
+      // Teken meteen opnieuw, zodat je niet de joinem ziet flitsen.
+      render();
     } else if (msg.t === "error") {
       onError(msg);
     } else if (msg.t === "event") {
@@ -231,6 +233,7 @@
     if (!you) {
       // Nog niet meegedaan, of door de host verwijderd.
       if (!joining) {
+        // We wachten niet meer op een join-antwoord: je bent echt niet in de quiz.
         if (playerId) {
           store(STORE_ID, null);
           playerId = null;
@@ -238,6 +241,7 @@
         }
         show("join");
       }
+      // Als we nog steeds aan het joinen zijn, toon niets (de lobby is te vroeg gekomen).
       return;
     }
     playerId = you.id;
