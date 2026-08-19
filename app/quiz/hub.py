@@ -86,7 +86,8 @@ class Hub:
             *(conn.send(payload) for conn, payload in payloads), return_exceptions=True
         )
         for (conn, _), ok in zip(payloads, results):
-            if ok is not True:
+            # Alleen verwijderen als de socket echt weg is, niet op transiente fouten.
+            if ok is not True and conn.ws.client_state is not WebSocketState.CONNECTED:
                 self.connections.discard(conn)
 
     async def broadcast_state(self) -> None:
