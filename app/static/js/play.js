@@ -10,7 +10,9 @@
   var STORE_NAME = "jhquiz.name";
   var OPT_CLASS = ["opt-a", "opt-b", "opt-c", "opt-d"];
 
-  var $ = function (id) { return document.getElementById(id); };
+  var $ = QuizUI.$;
+  var fmt = QuizUI.fmt;
+  var toast = QuizUI.toast;
 
   var el = {
     conn: $("conn"), connText: $("connText"),
@@ -54,38 +56,17 @@
     return null;
   }
 
-  function fmt(n) {
-    return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  }
-
   function show(name) {
     Object.keys(el.screens).forEach(function (key) {
       el.screens[key].hidden = key !== name;
     });
   }
 
-  function toast(message) {
-    var node = document.createElement("div");
-    node.className = "toast";
-    node.textContent = message;
-    document.body.appendChild(node);
-    window.setTimeout(function () { node.remove(); }, 2600);
-  }
-
   // --- verbinding ---------------------------------------------------------
-
-  function setStatus(status) {
-    var labels = {
-      connecting: "Verbinden…", reconnecting: "Opnieuw verbinden…",
-      online: "Verbonden", offline: "Geen verbinding"
-    };
-    el.conn.dataset.status = status === "reconnecting" ? "connecting" : status;
-    el.connText.textContent = labels[status] || status;
-  }
 
   socket = new QuizSocket({
     path: "/ws/play",
-    onStatus: setStatus,
+    onStatus: QuizUI.statusBinder(el.conn, el.connText),
     onOpen: function () {
       var savedId = store(STORE_ID);
       var savedName = store(STORE_NAME);
@@ -136,14 +117,14 @@
       if (el.answers) el.answers.dataset.locked = "false";
       el.estimateSubmit.disabled = false;
     }
-    toast(msg.message || "Er ging iets mis.");
+    toast(msg.message || "Er ging iets mis.", "bad");
   }
 
   function onEvent(msg) {
     if (msg.name === "quiz_reset") {
       lastQuestionId = null;
       pendingChoice = null;
-      toast("De quiz start opnieuw!");
+      toast("De quiz start opnieuw!", "ok");
     }
     if (msg.name === "question_started" && navigator.vibrate) {
       navigator.vibrate(40);
@@ -188,7 +169,7 @@
   function submitEstimate() {
     var raw = el.estimateInput.value.replace(",", ".").trim();
     if (raw === "" || isNaN(parseFloat(raw))) {
-      toast("Geef eerst een getal in.");
+      toast("Geef eerst een getal in.", "bad");
       return;
     }
     el.estimateSubmit.disabled = true;
@@ -250,7 +231,11 @@
     if (!you) {
       // Nog niet meegedaan, of door de host verwijderd.
       if (!joining) {
-        if (playerId) { store(STORE_ID, null); playerId = null; toast("Je bent uit de quiz gehaald."); }
+        if (playerId) {
+          store(STORE_ID, null);
+          playerId = null;
+          toast("De leiding heeft je uit de quiz gehaald.", "bad");
+        }
         show("join");
       }
       return;

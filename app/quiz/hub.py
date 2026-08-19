@@ -3,6 +3,10 @@
 Er is één quiz, dus er is geen roombeheer. De hub houdt gewoon alle open sockets
 bij en stuurt iedereen bij elke verandering een volledige, rolgebonden snapshot.
 Dat maakt reconnecten triviaal: wie binnenkomt krijgt meteen het hele plaatje.
+
+Meerdere hostschermen tegelijk zijn de normale gang van zaken: /present op de
+beamer en /admin op de laptop van de leiding zijn allebei "host". Ze delen
+dezelfde rol en dezelfde snapshot; enkel hun UI verschilt.
 """
 
 from __future__ import annotations
@@ -19,15 +23,22 @@ log = logging.getLogger("quiz.hub")
 
 
 class Connection:
-    __slots__ = ("ws", "role", "player_id", "id")
+    __slots__ = ("ws", "role", "view", "player_id", "id")
 
     _counter = 0
 
-    def __init__(self, ws: WebSocket, role: str, player_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        ws: WebSocket,
+        role: str,
+        player_id: Optional[str] = None,
+        view: str = "",
+    ) -> None:
         Connection._counter += 1
         self.id = Connection._counter
         self.ws = ws
         self.role = role  # "player" | "host"
+        self.view = view  # "present" | "admin" | "" -- puur informatief
         self.player_id = player_id
 
     async def send(self, payload: dict[str, Any]) -> bool:
@@ -45,33 +56,23 @@ class Hub:
     def __init__(self, game: Game) -> None:
         self.game = game
         self.connections: set[Connection] = set()
-        self._host_connection: Optional[Connection] = None
         game.notifier = self
 
     # -- registratie --------------------------------------------------------
 
-    def add(self, conn: Connection) -> Optional[Connection]:
-        """Voeg een verbinding toe. Geeft de verdrongen host terug, indien van toepassing."""
+    def add(self, conn: Connection) -> None:
         self.connections.add(conn)
-        superseded = None
-        if conn.role == "host":
-            superseded = self._host_connection
-            self._host_connection = conn
-            self.game.host_connected = True
-        return superseded
+        self._sync_host_flag()
 
     def remove(self, conn: Connection) -> None:
         self.connections.discard(conn)
-        if self._host_connection is conn:
-            self._host_connection = None
-            self.game.host_connected = False
+        self._sync_host_flag()
 
-    @property
-    def host_connection(self) -> Optional[Connection]:
-        return self._host_connection
+    def _sync_host_flag(self) -> None:
+        self.game.host_connected = any(c.role == "host" for c in self.connections)
 
-    def is_active_host(self, conn: Connection) -> bool:
-        return self._host_connection is conn
+    def host_views(self) -> list[str]:
+        return sorted(c.view for c in self.connections if c.role == "host")
 
     def player_connection_count(self, player_id: str) -> int:
         return sum(1 for c in self.connections if c.role == "player" and c.player_id == player_id)

@@ -25,15 +25,13 @@
     <p class="join__sub" id="joinSub">Jonge Helden — regendag-editie</p>
 
     <form class="join__form" id="joinForm" autocomplete="off">
-      <label class="join__label" for="nameInput">Geef je naam in</label>
-      <input class="join__input" id="nameInput" name="naam" type="text"
-             maxlength="20" placeholder="Sander" required
+        <input class="join__input" id="nameInput" name="naam" type="text"
+             maxlength="20" placeholder="Je naam" required
              autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="go">
       <button class="btn join__submit" id="joinButton" type="submit">Meedoen</button>
       <div class="join__error" id="joinError" role="alert"></div>
     </form>
 
-    <p class="join__hint">Geen code, geen account. Enkel je naam — die verschijnt op het grote scherm.</p>
   </section>
 
   <!-- 2. Lobby -------------------------------------------------------- -->
@@ -116,6 +114,7 @@
 
 </main>
 
+<script src="/static/js/ui.js"></script>
 <script src="/static/js/net.js"></script>
 <script src="/static/js/play.js"></script>
 </body>

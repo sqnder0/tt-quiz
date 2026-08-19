@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0d1c13">
+<meta name="theme-color" content="#0a1a10">
 <meta name="robots" content="noindex">
-<title>Presentator — Boomhutten Quiz</title>
+<title>Beamer — Boomhutten Quiz</title>
 <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/base.css">
-<link rel="stylesheet" href="/static/css/host.css">
+<link rel="stylesheet" href="/static/css/present.css">
 </head>
-<body>
+<body class="present">
 
 <div class="conn" id="conn" data-status="connecting">
   <span class="conn__dot"></span><span id="connText">Verbinden…</span>
@@ -20,9 +20,9 @@
 
 <!-- Toegangspoort ------------------------------------------------------ -->
 <section class="gate" id="gate">
-  <div class="gate__logo">🌲</div>
-  <h1 class="gate__title">Presentatorscherm</h1>
-  <p class="gate__sub">Enkel voor de leiding.</p>
+  <div class="gate__logo">📽️</div>
+  <h1 class="gate__title">Beamerscherm</h1>
+  <p class="gate__sub">Dit scherm toont enkel. Bedienen doe je op <b>/admin</b>.</p>
   <form class="gate__form" id="gateForm" autocomplete="off">
     <input class="gate__input" id="gateInput" type="password" placeholder="Hostcode"
            autocomplete="current-password" enterkeyhint="go">
@@ -40,20 +40,24 @@
       <span class="chip" id="chipPhase">Lobby</span>
       <span class="chip" id="chipProgress" hidden>Vraag 1/30</span>
       <span class="chip chip--live" id="chipAnswers" hidden>0 antwoorden</span>
-      <button class="chip" id="chipPlayers" type="button" title="Toon alle spelers">👥 <b>0</b> spelers</button>
+      <span class="chip" id="chipPlayers">👥 <b>0</b></span>
     </div>
   </header>
 
   <!-- Lobby -->
-  <section class="lobby" id="viewLobby">
-    <h2 class="lobby__title" id="lobbyTitle">Klaar voor de Boomhutten Quiz?</h2>
-    <div class="lobby__count"><span id="lobbyCount">0</span><small id="lobbyCountLabel">spelers wachten</small></div>
-    <div class="lobby__url">📱 <span id="joinUrl">…</span></div>
-    <div class="names" id="names"></div>
+  <section class="view lobby" id="viewLobby">
+    <div class="lobby__main">
+      <p class="lobby__kicker">Doe mee op</p>
+      <div class="lobby__url" id="joinUrl">…</div>
+    </div>
+    <div class="lobby__side">
+      <div class="lobby__count"><b id="lobbyCount">0</b><small id="lobbyCountLabel">spelers</small></div>
+      <div class="names" id="names"></div>
+    </div>
   </section>
 
   <!-- Vraag + onthulling -->
-  <section class="question" id="viewQuestion" hidden>
+  <section class="view question" id="viewQuestion" hidden>
     <div class="question__head">
       <div class="question__badges">
         <span class="badge" id="qNumber">Vraag 1/30</span>
@@ -66,16 +70,17 @@
           <circle class="timer__value" id="timerValue" cx="60" cy="60" r="52"
                   stroke-dasharray="326.7" stroke-dashoffset="0"></circle>
         </svg>
-        <div class="timer__num" id="timerNum">20</div>
+        <div class="timer__num" id="timerNum">90</div>
       </div>
     </div>
 
-    <div class="question__media" id="qMedia" hidden>
-      <img class="question__image" id="qImage" alt="" hidden>
-      <div class="question__visual" id="qVisual" hidden></div>
+    <div class="question__body">
+      <div class="question__media" id="qMedia" hidden>
+        <img class="question__image" id="qImage" alt="" hidden>
+        <div class="question__visual" id="qVisual" hidden></div>
+      </div>
+      <h2 class="question__text" id="qText"></h2>
     </div>
-
-    <h2 class="question__text" id="qText"></h2>
 
     <div class="grid" id="grid" data-reveal="false"></div>
 
@@ -86,58 +91,38 @@
     </div>
 
     <div class="reveal-bar" id="revealBar" hidden>
-      <span>✅ Juist: <b id="revealCorrect"></b></span>
-      <span><b id="revealCount">0</b> van de <b id="revealTotal">0</b> spelers juist</span>
-      <span id="revealNoAnswer"></span>
+      <div class="reveal-bar__stats">
+        <span>✅ <b id="revealCorrect"></b></span>
+        <span><b id="revealCount">0</b>/<b id="revealTotal">0</b> juist</span>
+        <span id="revealNoAnswer"></span>
+      </div>
       <div class="reveal-bar__explain" id="revealExplain"></div>
     </div>
   </section>
 
   <!-- Tussenstand -->
-  <section class="board" id="viewBoard" hidden>
+  <section class="view board" id="viewBoard" hidden>
     <h2 class="board__title" id="boardTitle">🏆 Tussenstand</h2>
     <div class="board__list" id="boardList"></div>
   </section>
 
   <!-- Finale -->
-  <section class="finale" id="viewFinale" hidden>
+  <section class="view finale" id="viewFinale" hidden>
     <h2 class="finale__title" id="finaleTitle">🎉 En de winnaar is…</h2>
     <div class="podium" id="podium"></div>
-    <button class="btn btn--ghost" id="showStandings" type="button">Toon volledig eindklassement</button>
-    <div class="board__list" id="finalList" hidden></div>
+    <div class="board__list board__list--rest" id="finalList"></div>
   </section>
 
 </main>
 
-<!-- Bedieningsbalk ------------------------------------------------------ -->
-<div class="controls" id="controls" hidden>
-  <button class="btn controls__primary" id="btnPrimary" type="button">▶ Start de quiz</button>
-  <button class="btn btn--ghost" id="btnPause" type="button" hidden>⏸ Pauze</button>
-
-  <span class="controls__spacer"></span>
-
-  <label class="toggle" title="Automatisch doorgaan na de onthulling en de tussenstand">
-    <input type="checkbox" id="optAuto"> Automatisch doorgaan
-  </label>
-  <span class="chip" title="Sneltoetsen"><span class="kbd">spatie</span> verder · <span class="kbd">P</span> pauze</span>
-  <button class="btn btn--ghost" id="btnRestart" type="button">↻ Opnieuw starten</button>
-  <button class="btn btn--danger" id="btnFinish" type="button">Quiz afsluiten</button>
+<div class="hint" id="hint" hidden>
+  <span class="kbd">spatie</span> verder · <span class="kbd">P</span> pauze · bedienen op <b>/admin</b>
 </div>
 
-<!-- Spelerslade --------------------------------------------------------- -->
-<aside class="drawer" id="drawer">
-  <div class="drawer__head">
-    <strong>Spelers (<span id="drawerCount">0</span>)</strong>
-    <button class="btn btn--ghost" id="drawerClose" type="button">Sluiten</button>
-  </div>
-  <button class="btn btn--ghost" id="btnClearAbsent" type="button" hidden>
-    Afwezigen verwijderen
-  </button>
-  <div class="drawer__list" id="drawerList"></div>
-</aside>
-
+<script src="/static/js/ui.js"></script>
 <script src="/static/js/net.js"></script>
+<script src="/static/js/hostgate.js"></script>
 <script src="/static/js/confetti.js"></script>
-<script src="/static/js/host.js"></script>
+<script src="/static/js/present.js"></script>
 </body>
 </html>

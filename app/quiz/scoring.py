@@ -5,12 +5,16 @@ Uitgangspunt uit de opdracht: snelheid mag nooit belangrijker zijn dan juistheid
 Met de defaults hieronder levert dat:
 
     juist + supersnel   -> 1000 punten
-    juist + net op tijd ->  500 punten
+    juist + rustig aan  ->  500 punten
     fout (hoe snel ook) ->    0 punten
 
 Een correct antwoord op de valreep haalt dus nog altijd de helft van het maximum,
 en verslaat altijd een snel fout antwoord. Bij een dubbele-puntenvraag wordt
 alles vermenigvuldigd met de `points_multiplier` van de vraag.
+
+De snelheidsbonus loopt af over `speed_window_seconds`, niet over de volledige
+bedenktijd van de vraag. Zo kan een vraag ruim open blijven staan zonder dat de
+bonus zijn onderscheidend vermogen verliest.
 """
 
 from __future__ import annotations
@@ -30,6 +34,16 @@ class ScoringConfig:
 
     grace_seconds: float = 1.0
     """De eerste seconde telt als 'onmiddellijk'. Compenseert lezen + netwerk."""
+
+    speed_window_seconds: float = 20.0
+    """Binnen hoeveel seconden je de snelheidsbonus verdient.
+
+    Bewust losgekoppeld van de bedenktijd van de vraag. Een vraag mag gerust 90
+    seconden open staan zodat niemand moet haasten, maar als de bonus over die
+    volle 90 seconden zou uitsmeren, krijgt iedereen die binnen 10 seconden
+    antwoordt bijna hetzelfde -- en dan meet de bonus niets meer. Is de
+    bedenktijd korter dan dit venster, dan telt de bedenktijd.
+    """
 
     streak_bonus_per_step: int = 25
     """Kleine bonus per extra juist antwoord op rij (vanaf 2 op rij)."""
@@ -56,11 +70,14 @@ class ScoreResult:
 
 
 def speed_ratio(elapsed_seconds: float, time_limit: float, cfg: ScoringConfig = SCORING) -> float:
-    """Hoeveel van de tijd was er nog over, als fractie tussen 0 en 1."""
+    """Hoeveel van het bonusvenster was er nog over, als fractie tussen 0 en 1."""
     if time_limit <= 0:
         return 1.0
+    horizon = time_limit
+    if cfg.speed_window_seconds > 0:
+        horizon = min(time_limit, cfg.speed_window_seconds)
     effective = max(0.0, elapsed_seconds - cfg.grace_seconds)
-    window = max(1e-6, time_limit - cfg.grace_seconds)
+    window = max(1e-6, horizon - cfg.grace_seconds)
     return max(0.0, min(1.0, 1.0 - (effective / window)))
 
 

@@ -1,9 +1,10 @@
-/* Gedeelde basis voor het deelnemers- en het presentatorscherm.
+/* Gedeelde basis voor het deelnemers-, beamer- en beheerscherm.
    Bewust geen webfonts: op kamp is er niet altijd internet. */
 
 :root {
-  --forest-950: #08150e;
-  --forest-900: #0d1c13;
+  --forest-950: #061109;
+  --forest-900: #0a1a10;
+  --forest-850: #0e2417;
   --forest-800: #12281a;
   --forest-700: #1a3925;
   --forest-600: #245030;
@@ -13,27 +14,34 @@
   --rope: #e9dcc0;
   --rope-dim: #bda97f;
   --wood: #c98a4b;
-  --wood-dark: #8a5a2b;
   --fire: #ff8a3d;
   --ember: #ffd166;
 
   --ink: #f2f7f1;
-  --ink-dim: #a9c0ad;
+  --ink-dim: #a3bda9;
+  --ink-faint: #6d8a77;
 
-  --a: #ef5f3c;
-  --b: #2f9fe0;
-  --c: #35b96b;
+  --a: #f2564d;
+  --b: #2f8fe0;
+  --c: #2fb96b;
   --d: #a566d8;
 
   --ok: #35d07f;
-  --bad: #ef5f3c;
+  --bad: #f2564d;
 
+  --line: rgba(233, 220, 192, 0.14);
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-strong: rgba(255, 255, 255, 0.09);
+
+  --radius-sm: 12px;
   --radius: 18px;
-  --radius-lg: 26px;
-  --shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
-  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.25);
+  --radius-lg: 28px;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.28);
+  --glow: 0 0 0 3px rgba(74, 222, 128, 0.28);
 
   --font: "Trebuchet MS", "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
+  --mono: "Consolas", "SFMono-Regular", ui-monospace, monospace;
 }
 
 *,
@@ -54,18 +62,23 @@ body {
   color: var(--ink);
   background: var(--forest-900);
   background-image:
-    radial-gradient(1100px 700px at 12% -10%, rgba(74, 222, 128, 0.13), transparent 60%),
-    radial-gradient(900px 600px at 92% 8%, rgba(255, 138, 61, 0.11), transparent 62%),
-    radial-gradient(1200px 900px at 50% 118%, rgba(36, 80, 48, 0.55), transparent 70%);
+    radial-gradient(1100px 720px at 10% -12%, rgba(74, 222, 128, 0.16), transparent 60%),
+    radial-gradient(900px 620px at 94% 4%, rgba(255, 138, 61, 0.13), transparent 62%),
+    radial-gradient(1300px 950px at 50% 120%, rgba(36, 80, 48, 0.6), transparent 72%);
   background-attachment: fixed;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
-button {
+button,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+button {
   border: 0;
   background: none;
   cursor: pointer;
@@ -77,6 +90,10 @@ input {
 
 [hidden] {
   display: none !important;
+}
+
+::selection {
+  background: rgba(74, 222, 128, 0.3);
 }
 
 .sr-only {
@@ -99,19 +116,24 @@ input {
   border-radius: 999px;
   font-weight: bold;
   letter-spacing: 0.01em;
-  background: linear-gradient(180deg, var(--moss), #2fae5f);
-  color: #06210f;
+  background: linear-gradient(180deg, var(--moss), #2aa458);
+  color: #05210f;
   box-shadow: var(--shadow-soft);
   transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
   touch-action: manipulation;
 }
 
 .btn:hover:not(:disabled) {
-  filter: brightness(1.07);
+  filter: brightness(1.08);
 }
 
 .btn:active:not(:disabled) {
   transform: translateY(2px) scale(0.99);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-soft), var(--glow);
 }
 
 .btn:disabled {
@@ -120,10 +142,14 @@ input {
 }
 
 .btn--ghost {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--glass);
   color: var(--ink);
-  border: 2px solid rgba(233, 220, 192, 0.22);
+  border: 2px solid var(--line);
   box-shadow: none;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--glass-strong);
 }
 
 .btn--fire {
@@ -132,15 +158,24 @@ input {
 }
 
 .btn--danger {
-  background: rgba(239, 95, 60, 0.16);
-  color: #ffb9a6;
-  border: 2px solid rgba(239, 95, 60, 0.45);
+  background: rgba(242, 86, 77, 0.14);
+  color: #ffb0a4;
+  border: 2px solid rgba(242, 86, 77, 0.42);
   box-shadow: none;
 }
 
+.btn--danger:hover:not(:disabled) {
+  background: rgba(242, 86, 77, 0.24);
+}
+
+.btn--sm {
+  padding: 0.5em 1em;
+  font-size: 0.85rem;
+}
+
 .card {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(233, 220, 192, 0.13);
+  background: var(--glass);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
@@ -198,8 +233,8 @@ input {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: bold;
-  background: rgba(8, 21, 14, 0.82);
-  border: 1px solid rgba(233, 220, 192, 0.18);
+  background: rgba(6, 17, 9, 0.85);
+  border: 1px solid var(--line);
   backdrop-filter: blur(6px);
   transition: opacity 0.3s ease;
 }
@@ -224,6 +259,96 @@ input {
   pointer-events: none;
 }
 
+/* --- toegangspoort (gedeeld door /present en /admin) -------------------- */
+
+.gate {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.gate__logo {
+  font-size: clamp(3rem, 9vw, 4.5rem);
+  animation: pop-in 0.5s ease both;
+}
+
+.gate__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  letter-spacing: -0.01em;
+}
+
+.gate__sub {
+  margin: 0 0 1.25rem;
+  color: var(--ink-dim);
+}
+
+.gate__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(340px, 100%);
+}
+
+.gate__input {
+  padding: 0.9em 1.1em;
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  font-size: 1.05rem;
+  text-align: center;
+  letter-spacing: 0.12em;
+}
+
+.gate__input:focus {
+  outline: none;
+  border-color: var(--moss);
+  box-shadow: var(--glow);
+}
+
+.gate__error {
+  min-height: 1.3em;
+  color: #ff9c8b;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+/* --- toast --------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.6rem;
+  transform: translateX(-50%);
+  z-index: 200;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0.8em 1.3em;
+  border-radius: 999px;
+  background: rgba(6, 17, 9, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  font-weight: bold;
+  font-size: 0.92rem;
+  text-align: center;
+  animation: rise-in 0.22s ease both;
+}
+
+.toast--bad {
+  border-color: rgba(242, 86, 77, 0.5);
+  color: #ffb0a4;
+}
+
+.toast--ok {
+  border-color: rgba(53, 208, 127, 0.5);
+  color: #9df0c2;
+}
+
 /* --- animaties ---------------------------------------------------------- */
 
 @keyframes pulse {
@@ -246,6 +371,11 @@ input {
   10%, 90% { transform: translateX(-2px); }
   30%, 70% { transform: translateX(4px); }
   50% { transform: translateX(-4px); }
+}
+
+@keyframes sheen {
+  from { background-position: -220% 0; }
+  to { background-position: 220% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

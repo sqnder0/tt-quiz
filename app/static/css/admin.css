@@ -1,0 +1,569 @@
+/* Bedieningspaneel. Werkt op een laptop naast de beamer, en op een gsm in je hand. */
+
+.admin {
+  min-height: 100dvh;
+}
+
+.conn {
+  top: 0.7rem;
+  right: 0.8rem;
+}
+
+.panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* --- bedieningsbalk ----------------------------------------------------- */
+
+.deck {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border-radius: var(--radius-lg);
+  background: rgba(10, 26, 16, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.deck__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.deck__primary {
+  flex: 1;
+  min-width: 12rem;
+  font-size: 1.05rem;
+  padding: 0.9em 1.4em;
+}
+
+.deck__spacer {
+  flex: 1;
+}
+
+.deck__status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.35em 0.85em;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.chip--live {
+  background: rgba(74, 222, 128, 0.16);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: var(--leaf);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.35em 0.85em;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle input {
+  accent-color: var(--moss);
+  width: 1.05em;
+  height: 1.05em;
+}
+
+.monitor {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--line);
+}
+
+.monitor__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.monitor__question {
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.monitor__answer {
+  color: var(--leaf);
+  font-weight: bold;
+  font-size: 0.92rem;
+}
+
+.monitor__answer:empty {
+  display: none;
+}
+
+/* --- tabbladen ---------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
+.tab {
+  flex: 1;
+  padding: 0.6em 1em;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab b {
+  display: inline-block;
+  margin-left: 0.4em;
+  padding: 0 0.5em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.8em;
+}
+
+.tab.is-active {
+  background: var(--glass-strong);
+  color: var(--ink);
+}
+
+.tabpane {
+  display: none;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.tabpane.is-active {
+  display: flex;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bar__spacer {
+  flex: 1;
+}
+
+.bar__note {
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+.empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.notice {
+  margin: 0;
+  padding: 0.7em 1em;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 209, 102, 0.12);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  color: var(--ember);
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+/* --- spelerslijst ------------------------------------------------------- */
+
+.plist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+
+.pcard {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
+.pcard[data-off="true"] {
+  opacity: 0.5;
+}
+
+.pcard__dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.pcard[data-off="true"] .pcard__dot {
+  background: var(--ink-faint);
+  box-shadow: none;
+}
+
+.pcard__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pcard__name {
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcard__meta {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.pcard__kick {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(242, 86, 77, 0.14);
+  border: 1px solid rgba(242, 86, 77, 0.4);
+  color: #ffb0a4;
+  font-weight: bold;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.pcard__kick:hover {
+  background: rgba(242, 86, 77, 0.3);
+}
+
+/* --- vrageneditor ------------------------------------------------------- */
+
+.qlist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.qrow {
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.qrow.is-open {
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.qrow__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.qrow__num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.qrow__title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.qrow__tags {
+  display: flex;
+  gap: 0.3rem;
+  flex: none;
+}
+
+.tag {
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  font-size: 0.7rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.tag--double {
+  background: rgba(255, 209, 102, 0.2);
+  border-color: rgba(255, 209, 102, 0.45);
+  color: var(--ember);
+}
+
+.qrow__tools {
+  display: flex;
+  gap: 0.2rem;
+  flex: none;
+}
+
+.tool {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.tool:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.tool:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tool--del:hover {
+  background: rgba(242, 86, 77, 0.3);
+}
+
+.qrow__form {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.2rem 0.75rem 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.field > label,
+.field__label {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: bold;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 0.6em 0.8em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 3.2em;
+  line-height: 1.35;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--moss);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+}
+
+.field select option {
+  background: var(--forest-850);
+}
+
+.frow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.7rem;
+}
+
+.opts {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.optrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.optrow__pick {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.45em 0.7em;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--opt) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--opt) 55%, transparent);
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.optrow__pick input {
+  accent-color: var(--ok);
+}
+
+.optrow input[type="text"] {
+  flex: 1;
+}
+
+.optrow.is-correct input[type="text"] {
+  border-color: rgba(53, 208, 127, 0.6);
+  background: rgba(53, 208, 127, 0.09);
+}
+
+.checkline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.88rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.checkline input {
+  accent-color: var(--ember);
+  width: 1.05em;
+  height: 1.05em;
+}
+
+/* --- instellingen ------------------------------------------------------- */
+
+.setting {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
+.setting > label,
+.setting__label {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: bold;
+}
+
+.setting__control {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.setting__control input[type="range"] {
+  flex: 1;
+  accent-color: var(--moss);
+}
+
+.setting__control output {
+  min-width: 3rem;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.setting__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.setting__hint a {
+  color: var(--leaf);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0.1em 0.45em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+/* --- gsm ---------------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  .panel {
+    padding: 0.7rem 0.7rem 3rem;
+  }
+  .deck__primary {
+    min-width: 100%;
+  }
+  .tab {
+    font-size: 0.8rem;
+    padding: 0.6em 0.5em;
+  }
+  .plist {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py --version)",
+      "Bash(pip --version)",
+      "Bash(pip list *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(python -)",
+      "Bash(python -c ' *)",
+      "Bash(touch app/__init__.py app/quiz/__init__.py tests/__init__.py)",
+      "Bash(python -m venv .venv)",
+      "Bash(.venv/Scripts/python.exe -m pip install --quiet --upgrade pip)",
+      "Bash(.venv/Scripts/python.exe -m pip install --quiet \"fastapi\" \"uvicorn[standard]\")",
+      "Bash(.venv/Scripts/python.exe -m pip freeze)",
+      "Bash(.venv/Scripts/python.exe -m unittest discover -s tests -v)",
+      "Bash(.venv/Scripts/python.exe -m unittest discover -s tests)",
+      "Bash(.venv/Scripts/python.exe -c ' *)"
+    ]
+  }
+}

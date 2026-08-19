@@ -6,8 +6,7 @@
   "use strict";
 
   var FATAL_CODES = {
-    4403: "Verkeerde hostcode.",
-    4409: "Een ander hostscherm heeft de controle overgenomen."
+    4403: "Verkeerde hostcode."
   };
 
   function QuizSocket(options) {

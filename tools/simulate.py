@@ -145,9 +145,28 @@ class Player(Client):
 
 
 class Host(Client):
-    def __init__(self, base: str, secret: str) -> None:
-        url = base.replace("http", "ws", 1) + "/ws/host?secret=" + secret
-        super().__init__(url, "host")
+    def __init__(self, base: str, secret: str, view: str = "admin") -> None:
+        url = base.replace("http", "ws", 1) + "/ws/host?secret=" + secret + "&view=" + view
+        super().__init__(url, view)
+        self.questions: dict[str, Any] = {}
+
+    async def _reader(self) -> None:
+        # Naast de gewone berichten vangt de host ook de vragenlijst op.
+        try:
+            async for raw in self.ws:
+                message = json.loads(raw)
+                kind = message.get("t")
+                if kind == "state":
+                    self.state = message
+                    self._ready.set()
+                elif kind == "questions":
+                    self.questions = message
+                elif kind == "event":
+                    self.events.append(message["name"])
+                elif kind == "error":
+                    self.errors.append(message.get("message", ""))
+        except Exception:
+            pass
 
     async def phase(self) -> str:
         return self.state.get("phase", "?")
@@ -212,6 +231,43 @@ async def run(base: str, secret: str, player_count: int) -> None:
     except Exception:
         check("verkeerde hostcode wordt geweigerd", True)
 
+    # --- twee hostschermen tegelijk ---------------------------------------
+    # /present op de beamer en /admin op de laptop moeten naast elkaar werken;
+    # vroeger verdrong het tweede hostscherm het eerste.
+    beamer = Host(base, secret, view="present")
+    await beamer.open()
+    await beamer.wait_state()
+    check("beamer en bediening kunnen tegelijk verbonden zijn",
+          beamer.state.get("phase") is not None and host.state.get("phase") is not None)
+
+    before_errors = len(host.errors)
+    await host.send({"t": "state"})
+    await asyncio.sleep(0.3)
+    check("de eerste host blijft commando's mogen sturen", len(host.errors) == before_errors,
+          f"host kreeg: {host.errors[before_errors:]}")
+
+    # --- vrageneditor -----------------------------------------------------
+    await host.send({"t": "host_questions"})
+    await asyncio.sleep(0.3)
+    check("host krijgt de vragenlijst voor de editor",
+          len(host.questions.get("items", [])) == host.state["quiz"]["total_questions"],
+          f"kreeg er {len(host.questions.get('items', []))}")
+    check("de vragenlijst is bewerkbaar in de lobby", host.questions.get("editable") is True)
+    check("de editor kent de bedenktijdgrenzen",
+          host.questions.get("limits", {}).get("max_time", 0) >= 60)
+
+    # Een kapotte vraag mag nooit bewaard worden.
+    before_errors = len(host.errors)
+    await host.send({"t": "host_questions_set", "items": [{"id": "stuk", "text": "Half", "options": ["een"]}]})
+    await asyncio.sleep(0.35)
+    check("een onvolledige vraag wordt geweigerd", len(host.errors) > before_errors,
+          "de server aanvaardde een vraag met één antwoord")
+
+    before_errors = len(host.errors)
+    await host.send({"t": "host_questions_set", "items": []})
+    await asyncio.sleep(0.35)
+    check("een lege vragenlijst wordt geweigerd", len(host.errors) > before_errors)
+
     # --- host-refresh -----------------------------------------------------
     await host.close()
     host = Host(base, secret)
@@ -264,6 +320,20 @@ async def run(base: str, secret: str, player_count: int) -> None:
         if number == 1:
             check("te laat antwoorden wordt geweigerd", len(late_player.errors) > before,
                   "de server accepteerde een antwoord na de onthulling")
+
+            # Vragen aanpassen midden in een quiz zou de nummering doen schuiven.
+            host_errors = len(host.errors)
+            await host.send({"t": "host_questions_set", "items": [{
+                "id": "tijdens", "text": "Mag niet", "category": "🏕️ Kamp",
+                "options": ["a", "b", "c", "d"], "correct_index": 0, "time_limit": 30,
+            }]})
+            await host.send({"t": "host_clear_all"})
+            await asyncio.sleep(0.35)
+            check("vragen aanpassen wordt geweigerd tijdens de quiz",
+                  len(host.errors) > host_errors)
+            check("lobby leegmaken doet niets tijdens de quiz",
+                  len(host.state.get("players", [])) == baseline + player_count,
+                  f"er blijven er {len(host.state.get('players', []))}")
 
         reveal = host.state["reveal"]
         registered = reveal["num_answered"]
@@ -326,8 +396,26 @@ async def run(base: str, secret: str, player_count: int) -> None:
     check("kick verwijdert de spelers", len(host.state.get("players", [])) == baseline,
           f"er blijven er {len(host.state.get('players', []))} staan, {baseline} verwacht")
 
+    if baseline == 0:
+        # Alleen veilig als er niemand anders in de lobby zit: dit gooit iedereen buiten.
+        rejoin = Player(base, "Laatkomer")
+        await rejoin.open()
+        await rejoin.join()
+        await asyncio.sleep(0.3)
+        await host.send({"t": "host_clear_all"})
+        await asyncio.sleep(0.4)
+        check("lobby leegmaken haalt iedereen eruit",
+              len(host.state.get("players", [])) == 0,
+              f"er blijven er {len(host.state.get('players', []))}")
+        check("de weggehaalde speler ziet zijn naamscherm terug",
+              rejoin.state.get("you") is None)
+        await rejoin.close()
+    else:
+        print("   (lobby leegmaken overgeslagen: er zaten al spelers in)")
+
     for player in players:
         await player.close()
+    await beamer.close()
     await host.close()
 
 

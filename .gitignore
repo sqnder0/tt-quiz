@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Aangepaste vragen: dit hoort bij de server, niet in git.
+data/

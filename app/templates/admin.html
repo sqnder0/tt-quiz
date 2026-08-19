@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1a10">
+<meta name="robots" content="noindex">
+<title>Bediening — Boomhutten Quiz</title>
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="admin">
+
+<div class="conn" id="conn" data-status="connecting">
+  <span class="conn__dot"></span><span id="connText">Verbinden…</span>
+</div>
+
+<!-- Toegangspoort ------------------------------------------------------ -->
+<section class="gate" id="gate">
+  <div class="gate__logo">🎛️</div>
+  <h1 class="gate__title">Bediening</h1>
+  <p class="gate__sub">Zet <b>/present</b> op de beamer, dit scherm houd je zelf.</p>
+  <form class="gate__form" id="gateForm" autocomplete="off">
+    <input class="gate__input" id="gateInput" type="password" placeholder="Hostcode"
+           autocomplete="current-password" enterkeyhint="go">
+    <button class="btn" type="submit">Openen</button>
+    <div class="gate__error" id="gateError" role="alert"></div>
+  </form>
+</section>
+
+<main class="panel" id="panel" hidden>
+
+  <!-- Bedieningsbalk --------------------------------------------------- -->
+  <header class="deck">
+    <div class="deck__row">
+      <button class="btn deck__primary" id="btnPrimary" type="button">▶ Start de quiz</button>
+      <button class="btn btn--ghost" id="btnPause" type="button" hidden>⏸ Pauze</button>
+      <span class="deck__spacer"></span>
+      <button class="btn btn--ghost btn--sm" id="btnRestart" type="button">↻ Opnieuw</button>
+      <button class="btn btn--danger btn--sm" id="btnFinish" type="button">Afsluiten</button>
+    </div>
+
+    <div class="deck__status">
+      <span class="chip" id="chipPhase">Lobby</span>
+      <span class="chip" id="chipProgress" hidden>Vraag 1/30</span>
+      <span class="chip" id="chipTimer" hidden>90s</span>
+      <span class="chip chip--live" id="chipAnswers" hidden>0 / 0 geantwoord</span>
+      <span class="chip" id="chipPlayers">👥 0 spelers</span>
+      <label class="toggle" title="De quiz schuift zelf door na de onthulling en de tussenstand">
+        <input type="checkbox" id="optAuto"> Automatisch doorgaan
+      </label>
+    </div>
+
+    <div class="monitor" id="monitor" hidden>
+      <div class="monitor__label">Nu op de beamer</div>
+      <div class="monitor__question" id="monitorQuestion"></div>
+      <div class="monitor__answer" id="monitorAnswer"></div>
+    </div>
+  </header>
+
+  <!-- Tabbladen -------------------------------------------------------- -->
+  <nav class="tabs" id="tabs">
+    <button class="tab is-active" type="button" data-tab="players">Spelers <b id="tabPlayerCount">0</b></button>
+    <button class="tab" type="button" data-tab="questions">Vragen <b id="tabQuestionCount">0</b></button>
+    <button class="tab" type="button" data-tab="settings">Instellingen</button>
+  </nav>
+
+  <!-- Spelers ---------------------------------------------------------- -->
+  <section class="tabpane is-active" id="pane-players">
+    <div class="bar">
+      <button class="btn btn--ghost btn--sm" id="btnClearAbsent" type="button">Afwezigen verwijderen</button>
+      <button class="btn btn--danger btn--sm" id="btnClearAll" type="button">Lobby leegmaken</button>
+      <span class="bar__note" id="playerNote"></span>
+    </div>
+    <div class="plist" id="playerList"></div>
+    <p class="empty" id="playerEmpty">Nog niemand binnen. Deel de link: <b id="joinUrl">…</b></p>
+  </section>
+
+  <!-- Vragen ----------------------------------------------------------- -->
+  <section class="tabpane" id="pane-questions">
+    <div class="bar">
+      <button class="btn btn--sm" id="btnQSave" type="button" disabled>Bewaren</button>
+      <button class="btn btn--ghost btn--sm" id="btnQAdd" type="button">+ Nieuwe vraag</button>
+      <button class="btn btn--ghost btn--sm" id="btnQRevert" type="button" disabled>Wijzigingen weggooien</button>
+      <span class="bar__spacer"></span>
+      <button class="btn btn--danger btn--sm" id="btnQReset" type="button">Terug naar de standaardvragen</button>
+    </div>
+    <p class="notice" id="qNotice" hidden></p>
+    <div class="qlist" id="questionList"></div>
+  </section>
+
+  <!-- Instellingen ----------------------------------------------------- -->
+  <section class="tabpane" id="pane-settings">
+    <div class="setting">
+      <label for="optReveal">Antwoord blijft staan</label>
+      <div class="setting__control">
+        <input type="range" id="optReveal" min="2" max="30" step="1" value="8">
+        <output id="optRevealOut">8s</output>
+      </div>
+      <p class="setting__hint">Enkel bij "Automatisch doorgaan".</p>
+    </div>
+    <div class="setting">
+      <label for="optBoard">Tussenstand blijft staan</label>
+      <div class="setting__control">
+        <input type="range" id="optBoard" min="2" max="30" step="1" value="7">
+        <output id="optBoardOut">7s</output>
+      </div>
+      <p class="setting__hint">Enkel bij "Automatisch doorgaan".</p>
+    </div>
+    <div class="setting">
+      <span class="setting__label">Schermen</span>
+      <p class="setting__hint">
+        Beamer: <a href="/present" target="_blank" rel="noopener"><b id="urlPresent">/present</b></a> ·
+        Spelers: <a href="/" target="_blank" rel="noopener"><b id="urlPlay">/</b></a>
+      </p>
+    </div>
+    <div class="setting">
+      <span class="setting__label">Sneltoetsen</span>
+      <p class="setting__hint">
+        <span class="kbd">spatie</span> volgende stap · <span class="kbd">P</span> pauze.
+        Werken ook op het beamerscherm.
+      </p>
+    </div>
+    <div class="setting">
+      <span class="setting__label">Hostcode</span>
+      <p class="setting__hint">
+        <button class="btn btn--ghost btn--sm" id="btnForget" type="button">Code vergeten op dit toestel</button>
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<script src="/static/js/ui.js"></script>
+<script src="/static/js/net.js"></script>
+<script src="/static/js/hostgate.js"></script>
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

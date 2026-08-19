@@ -32,8 +32,14 @@ from enum import Enum
 from typing import Any, Optional, Protocol, Sequence
 
 from .. import config
-from . import scoring
-from .questions import OPTION_KEYS, QUESTIONS, Question
+from . import scoring, store
+from .questions import (
+    CATEGORIES,
+    OPTION_KEYS,
+    Question,
+    from_dict as question_from_dict,
+    to_dict as question_to_dict,
+)
 
 log = logging.getLogger("quiz.game")
 
@@ -130,11 +136,13 @@ class Answer:
 class Game:
     def __init__(
         self,
-        questions: Sequence[Question] = QUESTIONS,
+        questions: Sequence[Question] | None = None,
         scoring_config: scoring.ScoringConfig = scoring.SCORING,
         notifier: Notifier | None = None,
     ) -> None:
-        self.questions = list(questions)
+        # Geen lijst meegegeven? Dan pakken we wat de leiding bewaard heeft, en
+        # anders de ingebouwde vragen.
+        self.questions = list(questions) if questions is not None else store.load()
         self.scoring = scoring_config
         self.notifier: Notifier = notifier or _NullNotifier()
 
@@ -279,12 +287,109 @@ class Game:
             await self.notifier.broadcast_state()
         return len(gone)
 
-    async def kick(self, player_id: str) -> None:
+    async def kick(self, player_id: str) -> Optional[str]:
+        """Zet één speler uit de quiz. Geeft de naam terug, of None."""
         async with self._lock:
-            self.players.pop(player_id, None)
+            player = self.players.pop(player_id, None)
+            if player is None:
+                return None
             for round_answers in self.answers:
                 round_answers.pop(player_id, None)
+        await self.notifier.broadcast_event("player_kicked", {"id": player_id, "name": player.name})
         await self.notifier.broadcast_state()
+        return player.name
+
+    async def clear_all_players(self) -> int:
+        """Maak de lobby helemaal leeg. Enkel in de lobby.
+
+        Tijdens een lopende quiz zou dit iedereen midden in een vraag buitengooien,
+        dus dat laten we niet toe -- gebruik dan eerst "Opnieuw starten".
+        """
+        async with self._lock:
+            if self.phase is not Phase.LOBBY:
+                return 0
+            removed = len(self.players)
+            self.players.clear()
+            self.answers = [dict() for _ in self.questions]
+            self._ranks_before_round = {}
+        if removed:
+            await self.notifier.broadcast_event("lobby_cleared", {"count": removed})
+            await self.notifier.broadcast_state()
+        return removed
+
+    # -- vragen beheren -----------------------------------------------------
+
+    def questions_payload(self) -> dict[str, Any]:
+        """De volledige vragenlijst voor de editor op /admin.
+
+        Bewust géén onderdeel van de gewone snapshot: die gaat bij elke
+        verandering naar alle schermen, en dertig vragen meesturen op elke tik is
+        zonde van de bandbreedte van dertig gsm's.
+        """
+        return {
+            "t": "questions",
+            "items": [question_to_dict(q) for q in self.questions],
+            "editable": self.phase is Phase.LOBBY,
+            "customised": store.is_customised(),
+            "categories": list(CATEGORIES),
+            "limits": {
+                "min_time": config.MIN_TIME_LIMIT,
+                "max_time": config.MAX_TIME_LIMIT,
+                "default_time": config.DEFAULT_TIME_LIMIT,
+            },
+        }
+
+    def _apply_questions(self, questions: list[Question]) -> None:
+        """Vervang de vragenlijst. Lock wordt al gehouden, fase is LOBBY."""
+        self.questions = questions
+        self.answers = [dict() for _ in questions]
+        self.q_index = -1
+        self._ranks_before_round = {}
+
+    async def set_questions(self, items: Any) -> int:
+        """Bewaar een volledig nieuwe vragenlijst vanuit de editor.
+
+        De editor stuurt telkens de hele lijst terug in plaats van losse
+        toevoeg/verwijder/verplaats-commando's. Dat scheelt een hoop protocol, en
+        de volgorde in de editor is per definitie de volgorde van de quiz.
+        """
+        if not isinstance(items, list) or not items:
+            raise ValueError("Er moet minstens één vraag overblijven.")
+        if len(items) > 200:
+            raise ValueError("Maximaal 200 vragen.")
+
+        parsed: list[Question] = []
+        seen: set[str] = set()
+        for number, item in enumerate(items, start=1):
+            try:
+                question = question_from_dict(item)
+            except ValueError as exc:
+                raise ValueError(f"Vraag {number}: {exc}") from exc
+            if question.id in seen:
+                raise ValueError(f"Vraag {number}: de id {question.id!r} bestaat al.")
+            seen.add(question.id)
+            parsed.append(question)
+
+        async with self._lock:
+            if self.phase is not Phase.LOBBY:
+                raise ValueError("Vragen aanpassen kan enkel vanuit de lobby.")
+            store.save(parsed)
+            self._apply_questions(parsed)
+
+        await self.notifier.broadcast_event("questions_changed", {"total": len(parsed)})
+        await self.notifier.broadcast_state()
+        return len(parsed)
+
+    async def reset_questions(self) -> int:
+        """Aanpassingen weggooien en terug naar de ingebouwde vragenlijst."""
+        async with self._lock:
+            if self.phase is not Phase.LOBBY:
+                raise ValueError("Vragen aanpassen kan enkel vanuit de lobby.")
+            self._apply_questions(store.reset())
+            total = len(self.questions)
+        await self.notifier.broadcast_event("questions_changed", {"total": total})
+        await self.notifier.broadcast_state()
+        return total
 
     # -- antwoorden ---------------------------------------------------------
 

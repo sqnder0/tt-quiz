@@ -7,15 +7,18 @@ dependency nodig is om dit op eender welke machine te draaien.
 from __future__ import annotations
 
 import asyncio
+import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.quiz import scoring  # noqa: E402
+from app import config  # noqa: E402
+from app.quiz import scoring, store  # noqa: E402
 from app.quiz.game import Game, Phase, sanitize_name  # noqa: E402
-from app.quiz.questions import Question  # noqa: E402
+from app.quiz.questions import QUESTIONS, Question, from_dict, to_dict  # noqa: E402
 
 DEMO = (
     Question(
@@ -412,3 +415,198 @@ class QuestionDataTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class PlayerAdminTests(unittest.IsolatedAsyncioTestCase):
+    """Spelers verwijderen: kick, afwezigen opkuisen, lobby leegmaken."""
+
+    async def asyncSetUp(self):
+        self.game = make_game()
+        self.a, _ = await self.game.join("Aya")
+        self.b, _ = await self.game.join("Bram")
+        self.c, _ = await self.game.join("Cis")
+
+    async def test_kick_removes_one_player_and_reports_the_name(self):
+        name = await self.game.kick(self.b.id)
+        self.assertEqual(name, "Bram")
+        self.assertNotIn(self.b.id, self.game.players)
+        self.assertEqual(len(self.game.players), 2)
+
+    async def test_kick_of_an_unknown_player_is_harmless(self):
+        self.assertIsNone(await self.game.kick("bestaat-niet"))
+        self.assertEqual(len(self.game.players), 3)
+
+    async def test_kicked_player_loses_the_you_block(self):
+        await self.game.kick(self.a.id)
+        snapshot = self.game.snapshot("player", self.a.id)
+        self.assertIsNone(snapshot["you"])
+
+    async def test_kick_also_drops_the_given_answer(self):
+        await self.game.host_start()
+        await self.game.submit_answer(self.a.id, choice=0)
+        self.assertEqual(len(self.game.answers[0]), 1)
+        await self.game.kick(self.a.id)
+        self.assertEqual(len(self.game.answers[0]), 0)
+
+    async def test_clear_absent_only_removes_the_disconnected(self):
+        await self.game.mark_disconnected(self.b.id)
+        removed = await self.game.clear_absent()
+        self.assertEqual(removed, 1)
+        self.assertEqual(set(self.game.players), {self.a.id, self.c.id})
+
+    async def test_clear_all_empties_the_lobby(self):
+        removed = await self.game.clear_all_players()
+        self.assertEqual(removed, 3)
+        self.assertEqual(self.game.players, {})
+
+    async def test_clear_all_is_refused_once_the_quiz_runs(self):
+        await self.game.host_start()
+        self.assertEqual(await self.game.clear_all_players(), 0)
+        self.assertEqual(len(self.game.players), 3)
+
+
+class QuestionEditingTests(unittest.IsolatedAsyncioTestCase):
+    """De vrageneditor van /admin, inclusief bewaren op schijf."""
+
+    def setUp(self):
+        self._original = config.QUESTIONS_FILE
+        self._dir = Path(tempfile.mkdtemp())
+        config.QUESTIONS_FILE = self._dir / "questions.json"
+
+    def tearDown(self):
+        config.QUESTIONS_FILE = self._original
+        shutil.rmtree(self._dir, ignore_errors=True)
+
+    @property
+    def _file(self) -> Path:
+        return config.QUESTIONS_FILE
+
+    @staticmethod
+    def _payload(**overrides):
+        data = {
+            "id": "nieuw",
+            "category": "Kamp",
+            "text": "Hoe heet deze knoop?",
+            "type": "multiple_choice",
+            "options": ["Mastworp", "Paalsteek", "Platte knoop", "Schootsteek"],
+            "correct_index": 0,
+            "time_limit": 45,
+        }
+        data.update(overrides)
+        return data
+
+    async def test_saving_replaces_the_list_and_writes_the_file(self):
+        game = make_game()
+        total = await game.set_questions([self._payload()])
+        self.assertEqual(total, 1)
+        self.assertEqual(game.total_questions, 1)
+        self.assertEqual(game.questions[0].text, "Hoe heet deze knoop?")
+        self.assertTrue(self._file.exists())
+
+    async def test_saved_questions_survive_a_restart(self):
+        game = make_game()
+        await game.set_questions([self._payload(text="Blijft dit staan?")])
+        # Een verse Game leest wat er bewaard is -- net als na een herstart.
+        self.assertEqual(Game().questions[0].text, "Blijft dit staan?")
+
+    async def test_reset_returns_to_the_built_in_questions(self):
+        game = make_game()
+        await game.set_questions([self._payload()])
+        total = await game.reset_questions()
+        self.assertEqual(total, len(QUESTIONS))
+        self.assertFalse(self._file.exists())
+
+    async def test_answer_buckets_follow_the_new_length(self):
+        game = make_game()
+        await game.set_questions([self._payload(id="x"), self._payload(id="y")])
+        self.assertEqual(len(game.answers), 2)
+
+    async def test_editing_is_refused_while_the_quiz_runs(self):
+        game = make_game()
+        await game.join("Aya")
+        await game.host_start()
+        with self.assertRaises(ValueError):
+            await game.set_questions([self._payload()])
+        self.assertEqual(game.total_questions, len(DEMO))
+
+    async def test_a_broken_question_is_refused_before_anything_changes(self):
+        game = make_game()
+        with self.assertRaises(ValueError) as caught:
+            await game.set_questions(
+                [self._payload(), self._payload(id="stuk", options=["een", "twee"])]
+            )
+        self.assertIn("Vraag 2", str(caught.exception))
+        # De oude lijst staat er nog: een halve opslag mag niet bestaan.
+        self.assertEqual(game.total_questions, len(DEMO))
+        self.assertFalse(self._file.exists())
+
+    async def test_duplicate_ids_are_refused(self):
+        game = make_game()
+        with self.assertRaises(ValueError):
+            await game.set_questions([self._payload(), self._payload()])
+
+    async def test_empty_list_is_refused(self):
+        game = make_game()
+        with self.assertRaises(ValueError):
+            await game.set_questions([])
+
+    async def test_time_limit_is_clamped_to_the_allowed_range(self):
+        game = make_game()
+        await game.set_questions([self._payload(time_limit=6000)])
+        self.assertEqual(game.questions[0].time_limit, config.MAX_TIME_LIMIT)
+
+    async def test_estimate_question_needs_a_tolerance(self):
+        game = make_game()
+        with self.assertRaises(ValueError):
+            await game.set_questions(
+                [self._payload(type="estimate", correct_value=10, tolerance=0)]
+            )
+
+    async def test_questions_payload_carries_what_the_editor_needs(self):
+        game = make_game()
+        payload = game.questions_payload()
+        self.assertEqual(len(payload["items"]), len(DEMO))
+        self.assertTrue(payload["editable"])
+        self.assertIn("categories", payload)
+        self.assertEqual(payload["limits"]["max_time"], config.MAX_TIME_LIMIT)
+
+    async def test_payload_is_not_editable_outside_the_lobby(self):
+        game = make_game()
+        await game.host_start()
+        self.assertFalse(game.questions_payload()["editable"])
+
+    def test_round_trip_through_json(self):
+        for question in QUESTIONS:
+            self.assertEqual(from_dict(to_dict(question)), question)
+
+    def test_a_corrupt_file_falls_back_to_the_defaults(self):
+        self._file.parent.mkdir(parents=True, exist_ok=True)
+        self._file.write_text("{ dit is geen json", encoding="utf-8")
+        # De waarschuwing hoort erbij, maar niet in de testuitvoer.
+        with self.assertLogs("quiz.store", level="WARNING"):
+            self.assertEqual(len(store.load()), len(QUESTIONS))
+
+
+class SpeedWindowTests(unittest.TestCase):
+    """Een ruime bedenktijd mag de snelheidsbonus niet uitvlakken."""
+
+    def test_bonus_window_is_independent_of_the_time_limit(self):
+        # Binnen het bonusvenster telt enkel hoe snel je was, niet hoe lang de
+        # vraag openstond. Anders krijgt iedereen bij 90 seconden bijna hetzelfde.
+        short = scoring.compute_score(accuracy=1.0, elapsed_seconds=6, time_limit=20)
+        long = scoring.compute_score(accuracy=1.0, elapsed_seconds=6, time_limit=90)
+        self.assertEqual(short.points, long.points)
+
+    def test_a_long_question_still_separates_fast_from_slow(self):
+        fast = scoring.compute_score(accuracy=1.0, elapsed_seconds=2, time_limit=90)
+        slow = scoring.compute_score(accuracy=1.0, elapsed_seconds=18, time_limit=90)
+        self.assertGreater(fast.points - slow.points, 300)
+
+    def test_short_questions_keep_their_own_window(self):
+        # Bij een vraag korter dan het bonusvenster telt de bedenktijd zelf.
+        self.assertAlmostEqual(scoring.speed_ratio(10, 10), 0.0, places=3)
+
+    def test_answering_after_the_window_still_earns_the_base(self):
+        late = scoring.compute_score(accuracy=1.0, elapsed_seconds=75, time_limit=90)
+        self.assertEqual(late.speed_bonus, 0)
+        self.assertEqual(late.points, scoring.SCORING.base_points)

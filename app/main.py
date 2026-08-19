@@ -1,10 +1,15 @@
 """Jonge Helden Boomhutten Quiz — FastAPI-app met twee WebSocket-endpoints.
 
-    GET  /            deelnemersscherm (idem /quiz)
-    GET  /host        presentatorscherm
+    GET  /            deelnemersscherm
+    GET  /present     beamerscherm (alleen tonen)
+    GET  /admin       bedieningspaneel (knoppen, spelers, vrageneditor)
     GET  /healthz     health check voor Dokploy
     WS   /ws/play     spelers
-    WS   /ws/host     presentator (secret vereist)
+    WS   /ws/host     /present en /admin (secret vereist)
+
+/present en /admin praten allebei over dezelfde hostsocket en mogen tegelijk
+open staan -- dat is net de bedoeling: beamer op het ene scherm, bediening op
+het andere.
 """
 
 from __future__ import annotations
@@ -16,8 +21,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config
@@ -66,14 +71,24 @@ def _page(name: str) -> FileResponse:
 
 
 @app.get("/", include_in_schema=False)
-@app.get("/quiz", include_in_schema=False)
 async def play_page() -> FileResponse:
     return _page("play.html")
 
 
+@app.get("/present", include_in_schema=False)
+async def present_page() -> FileResponse:
+    return _page("present.html")
+
+
+@app.get("/admin", include_in_schema=False)
+async def admin_page() -> FileResponse:
+    return _page("admin.html")
+
+
 @app.get("/host", include_in_schema=False)
-async def host_page() -> FileResponse:
-    return _page("host.html")
+async def host_page() -> RedirectResponse:
+    """Het oude adres. Bediening zit nu op /admin."""
+    return RedirectResponse("/admin", status_code=307)
 
 
 @app.get("/healthz", include_in_schema=False)
@@ -98,21 +113,8 @@ async def favicon() -> FileResponse:
     return FileResponse(STATIC_DIR / "img" / "favicon.svg", media_type="image/svg+xml")
 
 
-@app.get("/api/info", include_in_schema=False)
-async def api_info(request: Request) -> JSONResponse:
-    """Handig om tijdens het kamp snel de deelnamelink op het scherm te tonen."""
-    return JSONResponse(
-        {
-            "title": config.QUIZ_TITLE,
-            "subtitle": config.QUIZ_SUBTITLE,
-            "questions": game.total_questions,
-            "join_url": str(request.url_for("play_page")),
-        }
-    )
-
-
 # ---------------------------------------------------------------------------
-# WebSocket: spelers
+# WebSocket-hulp
 # ---------------------------------------------------------------------------
 
 
@@ -137,6 +139,11 @@ async def _recv_json(ws: WebSocket) -> dict[str, Any] | None:
     except (ValueError, TypeError):
         return None
     return data if isinstance(data, dict) else None
+
+
+# ---------------------------------------------------------------------------
+# WebSocket: spelers
+# ---------------------------------------------------------------------------
 
 
 @app.websocket("/ws/play")
@@ -216,7 +223,7 @@ async def ws_play(ws: WebSocket) -> None:
 
 
 # ---------------------------------------------------------------------------
-# WebSocket: host
+# WebSocket: host (/present en /admin)
 # ---------------------------------------------------------------------------
 
 _HOST_ACTIONS = {
@@ -229,6 +236,9 @@ _HOST_ACTIONS = {
     "host_finish": lambda msg: game.host_finish(),
     "host_kick": lambda msg: game.kick(str(msg.get("player_id", ""))),
     "host_clear_absent": lambda msg: game.clear_absent(),
+    "host_clear_all": lambda msg: game.clear_all_players(),
+    "host_questions_set": lambda msg: game.set_questions(msg.get("items")),
+    "host_questions_reset": lambda msg: game.reset_questions(),
     "host_options": lambda msg: game.host_set_options(
         auto_advance=msg.get("auto_advance"),
         auto_reveal_seconds=msg.get("auto_reveal_seconds"),
@@ -245,33 +255,23 @@ def _secret_ok(candidate: str | None) -> bool:
 
 @app.get("/api/host/check", include_in_schema=False)
 async def host_check(secret: str = Query(default="")) -> JSONResponse:
-    """Laat het hostscherm het geheim controleren vóór het de socket opent."""
+    """Laat /present en /admin het geheim controleren vóór ze de socket openen."""
     return JSONResponse({"ok": _secret_ok(secret)})
 
 
 @app.websocket("/ws/host")
-async def ws_host(ws: WebSocket, secret: str = Query(default="")) -> None:
+async def ws_host(
+    ws: WebSocket,
+    secret: str = Query(default=""),
+    view: str = Query(default=""),
+) -> None:
     if not _secret_ok(secret):
         await ws.close(code=4403, reason="Verkeerde hostcode")
         return
 
     await ws.accept()
-    conn = Connection(ws, role="host")
-    superseded = hub.add(conn)
-    if superseded is not None:
-        await hub.send_to(
-            superseded,
-            {
-                "t": "error",
-                "code": "host_superseded",
-                "message": "Een ander hostscherm heeft de controle overgenomen.",
-            },
-        )
-        try:
-            # De oude socket komt hierdoor uit zijn receive-loop en ruimt zichzelf op.
-            await superseded.ws.close(code=4409, reason="Overgenomen door een ander hostscherm")
-        except Exception:
-            hub.connections.discard(superseded)
+    conn = Connection(ws, role="host", view=view[:16])
+    hub.add(conn)
 
     try:
         await hub.send_to(conn, {"t": "hello", "role": "host", "phase": game.phase.value})
@@ -289,17 +289,22 @@ async def ws_host(ws: WebSocket, secret: str = Query(default="")) -> None:
             if kind == "state":
                 await hub.send_state_to(conn)
                 continue
-            if not hub.is_active_host(conn):
-                await hub.send_error(
-                    conn, "Dit scherm is niet meer de actieve host.", code="host_superseded"
-                )
+            if kind == "host_questions":
+                await hub.send_to(conn, game.questions_payload())
                 continue
 
             action = _HOST_ACTIONS.get(kind or "")
             if action is None:
                 await hub.send_error(conn, "Onbekend hostcommando.", code="unknown")
                 continue
-            await action(message)
+            try:
+                await action(message)
+            except ValueError as exc:
+                # Bv. een vraag die niet klopt, of vragen aanpassen tijdens de quiz.
+                await hub.send_error(conn, str(exc), code="command_rejected")
+                continue
+            if kind in ("host_questions_set", "host_questions_reset"):
+                await hub.send_to(conn, game.questions_payload())
 
     except WebSocketDisconnect:
         pass
