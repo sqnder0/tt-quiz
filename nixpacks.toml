@@ -1,0 +1,9 @@
+# Dokploy / Nixpacks.
+# De Python-provider detecteert requirements.txt zelf en zet een venv op de PATH.
+# We leggen hier enkel het startcommando vast.
+
+[phases.setup]
+nixPkgs = ["python311"]
+
+[start]
+cmd = "python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=* --ws websockets --timeout-keep-alive 65"

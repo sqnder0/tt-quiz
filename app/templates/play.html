@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0d1c13">
+<meta name="robots" content="noindex">
+<title>Boomhutten Quiz 🌳</title>
+<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/play.css">
+</head>
+<body>
+
+<div class="conn" id="conn" data-status="connecting">
+  <span class="conn__dot"></span><span id="connText">Verbinden…</span>
+</div>
+
+<main id="app">
+
+  <!-- 1. Naam ingeven ------------------------------------------------- -->
+  <section class="screen join" id="screen-join">
+    <div class="join__logo">🌳</div>
+    <h1 class="join__title" id="joinTitle">Boomhutten Quiz</h1>
+    <p class="join__sub" id="joinSub">Jonge Helden — regendag-editie</p>
+
+    <form class="join__form" id="joinForm" autocomplete="off">
+      <label class="join__label" for="nameInput">Geef je naam in</label>
+      <input class="join__input" id="nameInput" name="naam" type="text"
+             maxlength="20" placeholder="Sander" required
+             autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="go">
+      <button class="btn join__submit" id="joinButton" type="submit">Meedoen</button>
+      <div class="join__error" id="joinError" role="alert"></div>
+    </form>
+
+    <p class="join__hint">Geen code, geen account. Enkel je naam — die verschijnt op het grote scherm.</p>
+  </section>
+
+  <!-- 2. Lobby -------------------------------------------------------- -->
+  <section class="screen lobby" id="screen-lobby" hidden>
+    <div class="lobby__check">✅</div>
+    <h1 class="lobby__hi">Je bent binnen, <span class="lobby__name" id="lobbyName">speler</span>!</h1>
+    <p class="lobby__wait">Wachten tot de quiz begint…</p>
+    <div class="lobby__count" id="lobbyCount">1</div>
+    <div class="lobby__count-label" id="lobbyCountLabel">spelers doen mee</div>
+    <div class="lobby__dots"><span></span><span></span><span></span></div>
+  </section>
+
+  <!-- 3. Vraag -------------------------------------------------------- -->
+  <section class="screen question" id="screen-question" hidden>
+    <div class="qhead">
+      <div class="qhead__left">
+        <span class="badge" id="qNumber">Vraag 1/30</span>
+        <span class="badge" id="qCategory">🌳 Boomhutten</span>
+        <span class="badge badge--double" id="qDouble" hidden>2× PUNTEN</span>
+      </div>
+      <div class="qhead__timer" id="qTimer">20</div>
+    </div>
+
+    <img class="qimage" id="qImage" alt="" hidden>
+    <div class="qvisual" id="qVisual" hidden></div>
+    <h2 class="qtext" id="qText"></h2>
+
+    <div class="answers" id="answers" data-locked="false"></div>
+
+    <div class="estimate" id="estimate" hidden>
+      <div class="estimate__unit" id="estimateUnit"></div>
+      <div class="estimate__row">
+        <button class="estimate__step" type="button" id="estimateMinus" aria-label="Minder">−</button>
+        <input class="estimate__input" id="estimateInput" type="number" step="any"
+               inputmode="decimal" placeholder="?" enterkeyhint="send">
+        <button class="estimate__step" type="button" id="estimatePlus" aria-label="Meer">+</button>
+      </div>
+      <button class="btn join__submit" type="button" id="estimateSubmit">Bevestig mijn schatting</button>
+    </div>
+  </section>
+
+  <!-- 4. Antwoord geregistreerd --------------------------------------- -->
+  <section class="screen waiting" id="screen-waiting" hidden>
+    <div class="waiting__icon">📨</div>
+    <h1 class="waiting__title">Antwoord geregistreerd!</h1>
+    <div class="waiting__chosen" id="waitingChosen"></div>
+    <p class="waiting__sub" id="waitingSub">Wacht op het volgende scherm…</p>
+    <div class="lobby__dots"><span></span><span></span><span></span></div>
+  </section>
+
+  <!-- 5. Onthulling --------------------------------------------------- -->
+  <section class="screen result" id="screen-result" hidden>
+    <div class="result__icon" id="resultIcon">✅</div>
+    <h1 class="result__title" id="resultTitle">Juist!</h1>
+    <div class="result__points" id="resultPoints">+750</div>
+    <p class="result__correct" id="resultCorrect"></p>
+    <p class="result__explain" id="resultExplain"></p>
+    <div class="result__meta" id="resultMeta"></div>
+  </section>
+
+  <!-- 6. Tussenstand -------------------------------------------------- -->
+  <section class="screen standing" id="screen-standing" hidden>
+    <div class="standing__rank" id="standRank">#4</div>
+    <div class="standing__of" id="standOf">van de 23 spelers</div>
+    <div class="standing__score" id="standScore">2 340 punten</div>
+    <div class="standing__delta" id="standDelta"></div>
+    <div class="mini-board" id="standBoard"></div>
+  </section>
+
+  <!-- 7. Einde -------------------------------------------------------- -->
+  <section class="screen done" id="screen-done" hidden>
+    <div class="done__medal" id="doneMedal">🏅</div>
+    <h1 class="done__title" id="doneTitle">Quiz gedaan!</h1>
+    <div class="standing__rank" id="doneRank">#4</div>
+    <div class="standing__of" id="doneOf">van de 23 spelers</div>
+    <div class="done__score" id="doneScore">2 340</div>
+    <div class="done__stats" id="doneStats"></div>
+    <div class="mini-board" id="doneBoard"></div>
+  </section>
+
+</main>
+
+<script src="/static/js/net.js"></script>
+<script src="/static/js/play.js"></script>
+</body>
+</html>

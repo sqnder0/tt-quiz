@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Schematische tekening van drie palen die bovenaan samengesjord zijn en onderaan uitwaaieren">
+  <defs>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a9682f"/>
+      <stop offset="0.45" stop-color="#d29a5c"/>
+      <stop offset="1" stop-color="#8f5322"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="300" rx="18" fill="#f3ead6"/>
+
+  <!-- grond -->
+  <path d="M20 262 Q200 244 380 262" stroke="#c9b48c" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <g stroke-linecap="round" fill="none">
+    <!-- achterste paal -->
+    <path d="M200 52 L206 258" stroke="#7c4a1e" stroke-width="19"/>
+    <path d="M200 52 L206 258" stroke="url(#wood)" stroke-width="14"/>
+    <!-- linkerpaal -->
+    <path d="M197 48 L96 256" stroke="#7c4a1e" stroke-width="21"/>
+    <path d="M197 48 L96 256" stroke="url(#wood)" stroke-width="16"/>
+    <!-- rechterpaal -->
+    <path d="M203 48 L304 256" stroke="#7c4a1e" stroke-width="21"/>
+    <path d="M203 48 L304 256" stroke="url(#wood)" stroke-width="16"/>
+  </g>
+
+  <!-- sjorring: windingen rond de drie palen -->
+  <g stroke="#efe0b8" stroke-width="8" fill="none" stroke-linecap="round">
+    <path d="M168 84 Q200 76 234 84"/>
+    <path d="M164 100 Q200 92 240 100"/>
+    <path d="M160 116 Q200 108 246 116"/>
+    <path d="M156 132 Q200 124 252 132"/>
+  </g>
+  <g stroke="#c7ab72" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.85">
+    <path d="M168 88 Q200 80 234 88"/>
+    <path d="M164 104 Q200 96 240 104"/>
+    <path d="M160 120 Q200 112 246 120"/>
+    <path d="M156 136 Q200 128 252 136"/>
+  </g>
+
+  <!-- woelingen tussen de palen -->
+  <g stroke="#efe0b8" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M182 80 L176 138"/>
+    <path d="M220 80 L228 138"/>
+  </g>
+
+  <!-- los uiteinde -->
+  <path d="M252 134 q22 10 14 30 q-6 16 12 22" stroke="#efe0b8" stroke-width="6" fill="none" stroke-linecap="round"/>
+</svg>

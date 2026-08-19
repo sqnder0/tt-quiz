@@ -1,0 +1,259 @@
+/* Gedeelde basis voor het deelnemers- en het presentatorscherm.
+   Bewust geen webfonts: op kamp is er niet altijd internet. */
+
+:root {
+  --forest-950: #08150e;
+  --forest-900: #0d1c13;
+  --forest-800: #12281a;
+  --forest-700: #1a3925;
+  --forest-600: #245030;
+
+  --moss: #4ade80;
+  --leaf: #86efac;
+  --rope: #e9dcc0;
+  --rope-dim: #bda97f;
+  --wood: #c98a4b;
+  --wood-dark: #8a5a2b;
+  --fire: #ff8a3d;
+  --ember: #ffd166;
+
+  --ink: #f2f7f1;
+  --ink-dim: #a9c0ad;
+
+  --a: #ef5f3c;
+  --b: #2f9fe0;
+  --c: #35b96b;
+  --d: #a566d8;
+
+  --ok: #35d07f;
+  --bad: #ef5f3c;
+
+  --radius: 18px;
+  --radius-lg: 26px;
+  --shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.25);
+
+  --font: "Trebuchet MS", "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--forest-900);
+  background-image:
+    radial-gradient(1100px 700px at 12% -10%, rgba(74, 222, 128, 0.13), transparent 60%),
+    radial-gradient(900px 600px at 92% 8%, rgba(255, 138, 61, 0.11), transparent 62%),
+    radial-gradient(1200px 900px at 50% 118%, rgba(36, 80, 48, 0.55), transparent 70%);
+  background-attachment: fixed;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- herbruikbare onderdelen ------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.85em 1.5em;
+  border-radius: 999px;
+  font-weight: bold;
+  letter-spacing: 0.01em;
+  background: linear-gradient(180deg, var(--moss), #2fae5f);
+  color: #06210f;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+  touch-action: manipulation;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px) scale(0.99);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink);
+  border: 2px solid rgba(233, 220, 192, 0.22);
+  box-shadow: none;
+}
+
+.btn--fire {
+  background: linear-gradient(180deg, var(--ember), var(--fire));
+  color: #341402;
+}
+
+.btn--danger {
+  background: rgba(239, 95, 60, 0.16);
+  color: #ffb9a6;
+  border: 2px solid rgba(239, 95, 60, 0.45);
+  box-shadow: none;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(233, 220, 192, 0.13);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.35em 0.9em;
+  border-radius: 999px;
+  background: rgba(233, 220, 192, 0.12);
+  border: 1px solid rgba(233, 220, 192, 0.18);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+.badge--double {
+  background: linear-gradient(180deg, var(--ember), var(--fire));
+  color: #3a1704;
+  border-color: transparent;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-weight: bold;
+  color: var(--ember);
+}
+
+/* Antwoordkleuren + vormen, zodat kleurenblinde spelers ook mee zijn. */
+.opt-a { --opt: var(--a); }
+.opt-b { --opt: var(--b); }
+.opt-c { --opt: var(--c); }
+.opt-d { --opt: var(--d); }
+
+.shape::before {
+  content: "▲";
+}
+.opt-b .shape::before { content: "◆"; }
+.opt-c .shape::before { content: "●"; }
+.opt-d .shape::before { content: "■"; }
+
+/* --- verbindingsindicator ---------------------------------------------- */
+
+.conn {
+  position: fixed;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.4em 0.9em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: bold;
+  background: rgba(8, 21, 14, 0.82);
+  border: 1px solid rgba(233, 220, 192, 0.18);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.3s ease;
+}
+
+.conn__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 10px var(--ok);
+}
+
+.conn[data-status="connecting"] .conn__dot,
+.conn[data-status="offline"] .conn__dot {
+  background: var(--fire);
+  box-shadow: 0 0 10px var(--fire);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.conn[data-status="online"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- animaties ---------------------------------------------------------- */
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.82; }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.6) translateY(10px); opacity: 0; }
+  60% { transform: scale(1.06) translateY(0); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rise-in {
+  from { transform: translateY(18px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  30%, 70% { transform: translateX(4px); }
+  50% { transform: translateX(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

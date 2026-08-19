@@ -1,0 +1,578 @@
+/* Deelnemersscherm — mobile first. Grote knoppen, weinig tekst. */
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.conn {
+  top: 10px;
+  right: 10px;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  animation: rise-in 0.28s ease both;
+}
+
+/* --- 1. naam ingeven ---------------------------------------------------- */
+
+.join {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.join__logo {
+  font-size: clamp(3.4rem, 18vw, 5.5rem);
+  line-height: 1;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  animation: pop-in 0.5s ease both;
+}
+
+.join__title {
+  font-size: clamp(1.7rem, 8vw, 2.6rem);
+  margin: 0.35em 0 0;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.join__sub {
+  color: var(--ink-dim);
+  margin: 0.5em 0 1.8em;
+  font-size: 0.98rem;
+}
+
+.join__form {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.join__label {
+  text-align: left;
+  font-weight: bold;
+  color: var(--leaf);
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+}
+
+.join__input {
+  width: 100%;
+  padding: 1.05em 1.1em;
+  font-size: 1.35rem;
+  font-weight: bold;
+  text-align: center;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 2px solid rgba(233, 220, 192, 0.25);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.join__input:focus {
+  border-color: var(--moss);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.join__input::placeholder {
+  color: rgba(233, 220, 192, 0.35);
+  font-weight: normal;
+}
+
+.join__submit {
+  font-size: 1.2rem;
+  padding: 1em;
+  border-radius: var(--radius);
+}
+
+.join__error {
+  color: #ffb9a6;
+  font-weight: bold;
+  min-height: 1.3em;
+  font-size: 0.92rem;
+  animation: shake 0.35s ease;
+}
+
+.join__hint {
+  margin-top: 1.4rem;
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  max-width: 34ch;
+}
+
+/* --- 2. lobby ----------------------------------------------------------- */
+
+.lobby {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.lobby__check {
+  font-size: 4rem;
+  animation: pop-in 0.45s ease both;
+}
+
+.lobby__hi {
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+  margin: 0;
+}
+
+.lobby__name {
+  color: var(--moss);
+}
+
+.lobby__wait {
+  color: var(--ink-dim);
+  margin: 0.4em 0 1.6em;
+}
+
+.lobby__count {
+  font-size: 3.4rem;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--ember);
+}
+
+.lobby__count-label {
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+}
+
+.lobby__dots {
+  margin-top: 2rem;
+  display: flex;
+  gap: 8px;
+}
+
+.lobby__dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--moss);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.lobby__dots span:nth-child(2) { animation-delay: 0.15s; }
+.lobby__dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* --- 3. vraag ----------------------------------------------------------- */
+
+.qhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.qhead__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qhead__timer {
+  min-width: 2.6em;
+  text-align: center;
+  padding: 0.25em 0.5em;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--ember);
+  background: rgba(255, 209, 102, 0.12);
+  font-variant-numeric: tabular-nums;
+}
+
+.qhead__timer.is-low {
+  color: #fff;
+  background: var(--bad);
+  animation: pulse 0.6s ease-in-out infinite;
+}
+
+.qtext {
+  font-size: clamp(1.15rem, 5.2vw, 1.6rem);
+  font-weight: bold;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+
+.qimage {
+  width: 100%;
+  max-height: 26vh;
+  object-fit: contain;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+.qvisual {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.answers {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: stretch;
+  min-height: 46vh;
+}
+
+.answer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--opt);
+  color: #fff;
+  font-weight: bold;
+  font-size: clamp(0.95rem, 4vw, 1.15rem);
+  line-height: 1.2;
+  text-align: left;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.28), var(--shadow-soft);
+  transition: transform 0.12s ease, opacity 0.2s ease, box-shadow 0.12s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.answer:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
+}
+
+.answer .shape {
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+.answer__key {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.answers[data-locked="true"] .answer {
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.answers[data-locked="true"] .answer.is-chosen {
+  opacity: 1;
+  outline: 4px solid #fff;
+  outline-offset: -4px;
+}
+
+/* schattingsvraag */
+.estimate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+
+.estimate__row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.estimate__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8em;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(233, 220, 192, 0.28);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.estimate__input:focus {
+  border-color: var(--moss);
+}
+
+.estimate__step {
+  width: 3.2em;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(233, 220, 192, 0.2);
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.estimate__unit {
+  text-align: center;
+  color: var(--ink-dim);
+  font-weight: bold;
+}
+
+/* --- 4. antwoord geregistreerd ------------------------------------------ */
+
+.waiting {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.waiting__icon {
+  font-size: 4.5rem;
+  animation: pop-in 0.4s ease both;
+}
+
+.waiting__title {
+  font-size: clamp(1.5rem, 7vw, 2.1rem);
+  margin: 0.2em 0 0;
+}
+
+.waiting__chosen {
+  margin-top: 1.2rem;
+  padding: 0.8em 1.4em;
+  border-radius: var(--radius);
+  background: var(--opt, rgba(255, 255, 255, 0.08));
+  font-weight: bold;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-soft);
+  max-width: 90%;
+}
+
+.waiting__sub {
+  color: var(--ink-dim);
+  margin-top: 1.4rem;
+}
+
+/* --- 5. onthulling ------------------------------------------------------ */
+
+.result {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.result__icon {
+  font-size: 5rem;
+  animation: pop-in 0.45s ease both;
+}
+
+.result__title {
+  font-size: clamp(1.7rem, 8vw, 2.4rem);
+  margin: 0;
+}
+
+.result--ok .result__title { color: var(--ok); }
+.result--bad .result__title { color: #ff9c85; }
+
+.result__points {
+  font-size: clamp(2.4rem, 12vw, 3.6rem);
+  font-weight: bold;
+  color: var(--ember);
+  margin: 0.15em 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.result__correct {
+  color: var(--ink-dim);
+  max-width: 34ch;
+  line-height: 1.4;
+}
+
+.result__correct b {
+  color: var(--leaf);
+}
+
+.result__explain {
+  margin-top: 1rem;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  max-width: 40ch;
+  line-height: 1.45;
+}
+
+.result__meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 1.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pill {
+  padding: 0.5em 1.1em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(233, 220, 192, 0.15);
+  font-weight: bold;
+  font-size: 0.92rem;
+}
+
+/* --- 6. tussenstand ----------------------------------------------------- */
+
+.standing {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.standing__rank {
+  font-size: clamp(3.4rem, 20vw, 5rem);
+  font-weight: bold;
+  line-height: 1;
+  color: var(--ember);
+}
+
+.standing__of {
+  color: var(--ink-dim);
+  margin-bottom: 1.4rem;
+}
+
+.standing__score {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.standing__delta {
+  color: var(--moss);
+  font-weight: bold;
+}
+
+.mini-board {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-board__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.6em 0.9em;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  animation: rise-in 0.3s ease both;
+}
+
+.mini-board__row.is-you {
+  background: rgba(74, 222, 128, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.mini-board__pos {
+  width: 1.8em;
+  font-weight: bold;
+  color: var(--ink-dim);
+}
+
+.mini-board__name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-board__score {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 7. einde ----------------------------------------------------------- */
+
+.done {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.done__medal {
+  font-size: 5.5rem;
+  animation: pop-in 0.55s ease both;
+}
+
+.done__title {
+  font-size: clamp(1.6rem, 8vw, 2.3rem);
+  margin: 0.2em 0;
+}
+
+.done__score {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--ember);
+}
+
+.done__stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 1.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* --- toasts ------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 0.75em 1.3em;
+  border-radius: 999px;
+  background: rgba(239, 95, 60, 0.95);
+  color: #fff;
+  font-weight: bold;
+  box-shadow: var(--shadow);
+  animation: pop-in 0.25s ease both;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+
+/* --- grotere schermen --------------------------------------------------- */
+
+@media (min-width: 720px) {
+  .screen {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 28px;
+  }
+
+  .answers {
+    min-height: 400px;
+    gap: 14px;
+  }
+
+  .answer {
+    padding: 20px;
+    font-size: 1.25rem;
+  }
+}

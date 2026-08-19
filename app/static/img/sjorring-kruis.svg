@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Schematische tekening van twee palen die schuin kruisen, met touw diagonaal over de kruising gesjord">
+  <defs>
+    <linearGradient id="wood2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a9682f"/>
+      <stop offset="0.45" stop-color="#d29a5c"/>
+      <stop offset="1" stop-color="#8f5322"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="300" rx="18" fill="#f3ead6"/>
+
+  <g stroke-linecap="round" fill="none">
+    <!-- paal linksboven naar rechtsonder -->
+    <path d="M58 44 L344 258" stroke="#7c4a1e" stroke-width="24"/>
+    <path d="M58 44 L344 258" stroke="url(#wood2)" stroke-width="18"/>
+    <!-- paal rechtsboven naar linksonder -->
+    <path d="M344 44 L58 258" stroke="#7c4a1e" stroke-width="24"/>
+    <path d="M344 44 L58 258" stroke="url(#wood2)" stroke-width="18"/>
+  </g>
+
+  <!-- windingen: eerst over de ene diagonaal, dan over de andere -->
+  <g stroke="#efe0b8" stroke-width="9" fill="none" stroke-linecap="round">
+    <path d="M150 96 L262 202"/>
+    <path d="M133 113 L245 219"/>
+    <path d="M167 79 L279 185"/>
+  </g>
+  <g stroke="#efe0b8" stroke-width="9" fill="none" stroke-linecap="round">
+    <path d="M252 92 L142 200"/>
+    <path d="M269 109 L159 217"/>
+    <path d="M235 75 L125 183"/>
+  </g>
+  <g stroke="#c7ab72" stroke-width="1.6" fill="none" opacity="0.8">
+    <path d="M152 100 L264 206"/>
+    <path d="M135 117 L247 223"/>
+    <path d="M254 96 L144 204"/>
+    <path d="M271 113 L161 221"/>
+  </g>
+
+  <!-- woelingen rond de kruising -->
+  <ellipse cx="200" cy="150" rx="34" ry="20" fill="none" stroke="#efe0b8" stroke-width="7" transform="rotate(45 200 150)"/>
+  <ellipse cx="200" cy="150" rx="34" ry="20" fill="none" stroke="#efe0b8" stroke-width="7" transform="rotate(-45 200 150)"/>
+
+  <!-- los uiteinde -->
+  <path d="M262 206 q20 14 8 32 q-10 16 10 24" stroke="#efe0b8" stroke-width="6" fill="none" stroke-linecap="round"/>
+</svg>
