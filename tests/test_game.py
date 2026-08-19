@@ -138,16 +138,23 @@ class JoinTests(unittest.IsolatedAsyncioTestCase):
     async def test_reconnect_keeps_identity_and_score(self):
         game = make_game()
         player, _ = await game.join("Wout")
+        self.assertTrue(player.reconnect_token)
         player.score = 1234
         await game.mark_disconnected(player.id)
         self.assertFalse(game.players[player.id].connected)
 
-        same, reconnected = await game.join("Wout", player_id=player.id)
+        same, reconnected = await game.join("Wout", reconnect_token=player.reconnect_token)
         self.assertTrue(reconnected)
         self.assertEqual(same.id, player.id)
         self.assertEqual(same.score, 1234)
         self.assertTrue(same.connected)
         self.assertEqual(len(game.players), 1)
+
+    async def test_unknown_reconnect_token_creates_a_fresh_player(self):
+        game = make_game()
+        player, reconnected = await game.join("Nele", reconnect_token="invalid-token")
+        self.assertFalse(reconnected)
+        self.assertNotEqual(player.reconnect_token, "invalid-token")
 
     async def test_unknown_player_id_creates_a_fresh_player(self):
         game = make_game()

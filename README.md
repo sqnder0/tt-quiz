@@ -5,11 +5,11 @@ verder — iedereen krijgt de link, tikt zijn naam in en staat meteen in de lobb
 
 **Geen roomcodes. Geen accounts. Geen wachtwoorden.** Eén quiz, één sessie.
 
-| Wie | Waar | Wat |
-|---|---|---|
-| Deelnemers | `/` | Naam ingeven en spelen |
-| Beamer | `/present` | Alleen tonen — vraag, timer, tussenstand, podium |
-| Leiding | `/admin` | Knoppen, spelers en de vrageneditor |
+| Wie        | Waar       | Wat                                              |
+| ---------- | ---------- | ------------------------------------------------ |
+| Deelnemers | `/`        | Naam ingeven en spelen                           |
+| Beamer     | `/present` | Alleen tonen — vraag, timer, tussenstand, podium |
+| Leiding    | `/admin`   | Knoppen, spelers en de vrageneditor              |
 
 `/present` en `/admin` mogen **tegelijk** open staan: beamer op het grote scherm,
 bediening op je eigen laptop of gsm. Beide vragen eenmalig de hostcode.
@@ -57,21 +57,21 @@ test de vrageneditor en de opkuisknoppen, en rapporteert per controle OK of FOUT
 
 Alles gaat via environment variables. Enkel `HOST_SECRET` wil je zeker aanpassen.
 
-| Variabele | Standaard | Waarvoor |
-|---|---|---|
-| `HOST_SECRET` | `boomhut` | Code voor `/present` en `/admin`. **Zet dit voor je deployt.** |
-| `PORT` | `8000` | Poort (Dokploy vult dit zelf in) |
-| `QUIZ_TITLE` | Jonge Helden Boomhutten Quiz | Titel op alle schermen |
-| `QUIZ_SUBTITLE` | Boomhuttenkamp — regendag-editie | Ondertitel op het naamscherm |
-| `QUESTIONS_FILE` | `data/questions.json` | Waar aangepaste vragen bewaard worden |
-| `MAX_NAME_LENGTH` | `20` | Maximale lengte van een nickname |
-| `MAX_PLAYERS` | `200` | Plafond op het aantal spelers |
-| `DEFAULT_TIME_LIMIT` | `90` | Bedenktijd voor een nieuwe vraag |
-| `MAX_TIME_LIMIT` | `90` | Bovengrens in de vrageneditor |
-| `AUTO_CLOSE_WHEN_ALL_ANSWERED` | `true` | Vraag meteen afsluiten als iedereen binnen is |
-| `AUTO_ADVANCE` | `false` | Hands-free modus (ook live schakelbaar op `/admin`) |
-| `AUTO_REVEAL_SECONDS` | `8` | Hoe lang het antwoord blijft staan bij hands-free |
-| `AUTO_LEADERBOARD_SECONDS` | `7` | Hoe lang de tussenstand blijft staan bij hands-free |
+| Variabele                      | Standaard                        | Waarvoor                                                       |
+| ------------------------------ | -------------------------------- | -------------------------------------------------------------- |
+| `HOST_SECRET`                  | `boomhut`                        | Code voor `/present` en `/admin`. **Zet dit voor je deployt.** |
+| `PORT`                         | `8000`                           | Poort (Dokploy vult dit zelf in)                               |
+| `QUIZ_TITLE`                   | Jonge Helden Boomhutten Quiz     | Titel op alle schermen                                         |
+| `QUIZ_SUBTITLE`                | Boomhuttenkamp — regendag-editie | Ondertitel op het naamscherm                                   |
+| `QUESTIONS_FILE`               | `data/questions.json`            | Waar aangepaste vragen bewaard worden                          |
+| `MAX_NAME_LENGTH`              | `20`                             | Maximale lengte van een nickname                               |
+| `MAX_PLAYERS`                  | `200`                            | Plafond op het aantal spelers                                  |
+| `DEFAULT_TIME_LIMIT`           | `90`                             | Bedenktijd voor een nieuwe vraag                               |
+| `MAX_TIME_LIMIT`               | `90`                             | Bovengrens in de vrageneditor                                  |
+| `AUTO_CLOSE_WHEN_ALL_ANSWERED` | `true`                           | Vraag meteen afsluiten als iedereen binnen is                  |
+| `AUTO_ADVANCE`                 | `false`                          | Hands-free modus (ook live schakelbaar op `/admin`)            |
+| `AUTO_REVEAL_SECONDS`          | `8`                              | Hoe lang het antwoord blijft staan bij hands-free              |
+| `AUTO_LEADERBOARD_SECONDS`     | `7`                              | Hoe lang de tussenstand blijft staan bij hands-free            |
 
 De punten staan in [`app/quiz/scoring.py`](app/quiz/scoring.py), de startvragen in
 [`app/quiz/questions.py`](app/quiz/questions.py).
@@ -134,19 +134,19 @@ hostcommando's letterlijk niet: die code staat in een andere handler.
 
 **Client → server**
 
-| Speler | Host |
-|---|---|
+| Speler                                      | Host                                                                                                                                                                                                                                                  |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `join` · `submit_answer` · `state` · `ping` | `host_start` · `host_reveal` · `host_next` · `host_pause` · `host_resume` · `host_restart` · `host_finish` · `host_kick` · `host_clear_absent` · `host_clear_all` · `host_questions` · `host_questions_set` · `host_questions_reset` · `host_options` |
 
 **Server → client**
 
-* `state` — **volledige** momentopname, de ruggengraat van alles
-* `tick` — enkel de timer, elke seconde
-* `questions` — de vragenlijst, enkel op aanvraag van de editor
-* `event` — `player_joined`, `player_kicked`, `lobby_cleared`, `quiz_started`,
+- `state` — **volledige** momentopname, de ruggengraat van alles
+- `tick` — enkel de timer, elke seconde
+- `questions` — de vragenlijst, enkel op aanvraag van de editor
+- `event` — `player_joined`, `player_kicked`, `lobby_cleared`, `quiz_started`,
   `question_started`, `answer_received`, `answer_revealed`, `leaderboard_updated`,
   `questions_changed`, `quiz_finished`, `quiz_reset`
-* `joined`, `hello`, `error`, `pong`
+- `joined`, `hello`, `error`, `pong`
 
 Die volledige snapshot is bewust de kern: er is geen toestand die de client zelf
 moet bijhouden of opnieuw opvragen. Wie binnenkomt — nieuw of na een reconnect —
@@ -163,8 +163,8 @@ bandbreedte van dertig gsm's — de editor vraagt ze apart op.
 
 ### Reconnect
 
-Elke speler krijgt een server-side `player_id` (uuid) die in `localStorage` blijft
-staan. Bij het opnieuw verbinden stuurt de client die id mee en koppelt de server
+Elke speler krijgt een server-side reconnect-token dat in `localStorage` blijft
+staan. Bij het opnieuw verbinden stuurt de client dat token mee en koppelt de server
 hem terug aan de bestaande speler — met score, streak en zijn al gegeven antwoord.
 Een dichtgeklapte gsm, een refresh of een korte wifi-dip kost dus niets.
 
@@ -222,10 +222,10 @@ Question(
 
 Ondersteunde types:
 
-* `multiple_choice` — vier antwoorden (standaard)
-* `image` — idem, met `image="/static/img/…"` of `visual="🌳🔥"` (emoji werken
+- `multiple_choice` — vier antwoorden (standaard)
+- `image` — idem, met `image="/static/img/…"` of `visual="🌳🔥"` (emoji werken
   altijd, ook zonder internet)
-* `estimate` — speler tikt een getal in; punten naar nauwkeurigheid, met
+- `estimate` — speler tikt een getal in; punten naar nauwkeurigheid, met
   `correct_value`, `unit`, `tolerance` en optioneel `max_error`
 
 **Dubbele punten** is geen apart type maar `points_multiplier=2.0`, zodat je het
@@ -284,16 +284,16 @@ tools/simulate.py        end-to-end test met echte clients
 
 Op `/admin`:
 
-* **de grote knop** (of **spatie**) — volgende stap: starten, onthullen,
+- **de grote knop** (of **spatie**) — volgende stap: starten, onthullen,
   tussenstand, volgende vraag
-* **P** — pauzeren en verder gaan
-* **Spelers** — iedereen in een lijst, met wie verbonden is en een ✕ om iemand
+- **P** — pauzeren en verder gaan
+- **Spelers** — iedereen in een lijst, met wie verbonden is en een ✕ om iemand
   te verwijderen. **Afwezigen verwijderen** haalt alle niet-verbonden spelers
   eruit, **Lobby leegmaken** maakt volledig schoon. Allebei enkel in de lobby:
   tijdens een vraag telt een gsm die even op slot ging ook als "niet verbonden".
-* **Vragen** — de editor, zie hierboven
-* **Instellingen** — hands-free timings en de links naar de andere schermen
-* **↻ Opnieuw** — scores op nul, spelers blijven staan, terug naar de lobby
-* **Afsluiten** — meteen naar de eindstand
+- **Vragen** — de editor, zie hierboven
+- **Instellingen** — hands-free timings en de links naar de andere schermen
+- **↻ Opnieuw** — scores op nul, spelers blijven staan, terug naar de lobby
+- **Afsluiten** — meteen naar de eindstand
 
 Spatie en P werken ook op `/present`, handig als je met één laptop staat.

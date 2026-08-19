@@ -6,6 +6,7 @@
 (function () {
   "use strict";
 
+  var STORE_TOKEN = "jhquiz.reconnect_token";
   var STORE_ID = "jhquiz.player_id";
   var STORE_NAME = "jhquiz.name";
   var OPT_CLASS = ["opt-a", "opt-b", "opt-c", "opt-d"];
@@ -15,31 +16,66 @@
   var toast = QuizUI.toast;
 
   var el = {
-    conn: $("conn"), connText: $("connText"),
+    conn: $("conn"),
+    connText: $("connText"),
     screens: {
-      join: $("screen-join"), lobby: $("screen-lobby"), question: $("screen-question"),
-      waiting: $("screen-waiting"), result: $("screen-result"),
-      standing: $("screen-standing"), done: $("screen-done")
+      join: $("screen-join"),
+      lobby: $("screen-lobby"),
+      question: $("screen-question"),
+      waiting: $("screen-waiting"),
+      result: $("screen-result"),
+      standing: $("screen-standing"),
+      done: $("screen-done"),
     },
-    joinForm: $("joinForm"), nameInput: $("nameInput"), joinButton: $("joinButton"),
-    joinError: $("joinError"), joinTitle: $("joinTitle"), joinSub: $("joinSub"),
-    lobbyName: $("lobbyName"), lobbyCount: $("lobbyCount"), lobbyCountLabel: $("lobbyCountLabel"),
-    qNumber: $("qNumber"), qCategory: $("qCategory"), qDouble: $("qDouble"), qTimer: $("qTimer"),
-    qImage: $("qImage"), qVisual: $("qVisual"), qText: $("qText"), answers: $("answers"),
-    estimate: $("estimate"), estimateUnit: $("estimateUnit"), estimateInput: $("estimateInput"),
-    estimateSubmit: $("estimateSubmit"), estimateMinus: $("estimateMinus"), estimatePlus: $("estimatePlus"),
-    waitingChosen: $("waitingChosen"), waitingSub: $("waitingSub"),
-    resultIcon: $("resultIcon"), resultTitle: $("resultTitle"), resultPoints: $("resultPoints"),
-    resultCorrect: $("resultCorrect"), resultExplain: $("resultExplain"), resultMeta: $("resultMeta"),
-    standRank: $("standRank"), standOf: $("standOf"), standScore: $("standScore"),
-    standDelta: $("standDelta"), standBoard: $("standBoard"),
-    doneMedal: $("doneMedal"), doneTitle: $("doneTitle"), doneRank: $("doneRank"),
-    doneOf: $("doneOf"), doneScore: $("doneScore"), doneStats: $("doneStats"), doneBoard: $("doneBoard")
+    joinForm: $("joinForm"),
+    nameInput: $("nameInput"),
+    joinButton: $("joinButton"),
+    joinError: $("joinError"),
+    joinTitle: $("joinTitle"),
+    joinSub: $("joinSub"),
+    lobbyName: $("lobbyName"),
+    lobbyCount: $("lobbyCount"),
+    lobbyCountLabel: $("lobbyCountLabel"),
+    qNumber: $("qNumber"),
+    qCategory: $("qCategory"),
+    qDouble: $("qDouble"),
+    qTimer: $("qTimer"),
+    qImage: $("qImage"),
+    qVisual: $("qVisual"),
+    qText: $("qText"),
+    answers: $("answers"),
+    estimate: $("estimate"),
+    estimateUnit: $("estimateUnit"),
+    estimateInput: $("estimateInput"),
+    estimateSubmit: $("estimateSubmit"),
+    estimateMinus: $("estimateMinus"),
+    estimatePlus: $("estimatePlus"),
+    waitingChosen: $("waitingChosen"),
+    waitingSub: $("waitingSub"),
+    resultIcon: $("resultIcon"),
+    resultTitle: $("resultTitle"),
+    resultPoints: $("resultPoints"),
+    resultCorrect: $("resultCorrect"),
+    resultExplain: $("resultExplain"),
+    resultMeta: $("resultMeta"),
+    standRank: $("standRank"),
+    standOf: $("standOf"),
+    standScore: $("standScore"),
+    standDelta: $("standDelta"),
+    standBoard: $("standBoard"),
+    doneMedal: $("doneMedal"),
+    doneTitle: $("doneTitle"),
+    doneRank: $("doneRank"),
+    doneOf: $("doneOf"),
+    doneScore: $("doneScore"),
+    doneStats: $("doneStats"),
+    doneBoard: $("doneBoard"),
   };
 
   var state = null;
   var playerId = null;
   var joining = false;
+  var removed = false;
   var lastQuestionId = null;
   var pendingChoice = null;
   var timer = { remaining: 0, total: 0, running: false, at: 0 };
@@ -52,7 +88,9 @@
       if (value === undefined) return window.localStorage.getItem(key);
       if (value === null) window.localStorage.removeItem(key);
       else window.localStorage.setItem(key, value);
-    } catch (err) { /* geen opslag beschikbaar: dan maar zonder reconnect-id */ }
+    } catch (err) {
+      /* geen opslag beschikbaar: dan maar zonder reconnect-id */
+    }
     return null;
   }
 
@@ -68,14 +106,20 @@
     path: "/ws/play",
     onStatus: QuizUI.statusBinder(el.conn, el.connText),
     onOpen: function () {
+      var savedToken = store(STORE_TOKEN);
       var savedId = store(STORE_ID);
       var savedName = store(STORE_NAME);
-      if (savedId || savedName) {
+      if (savedToken || savedId || savedName) {
         joining = true;
-        socket.send({ t: "join", name: savedName || "", player_id: savedId || null });
+        socket.send({
+          t: "join",
+          name: savedName || "",
+          reconnect_token: savedToken || null,
+          player_id: savedToken ? null : savedId || null,
+        });
       }
     },
-    onMessage: handle
+    onMessage: handle,
   });
   socket.connect();
 
@@ -87,12 +131,14 @@
       applyTimer(msg.timer);
     } else if (msg.t === "joined") {
       joining = false;
+      removed = false;
       playerId = msg.player_id;
+      store(STORE_TOKEN, msg.reconnect_token);
       store(STORE_ID, msg.player_id);
       store(STORE_NAME, msg.name);
       el.nameInput.value = msg.name;
-      // Teken meteen opnieuw, zodat je niet de joinem ziet flitsen.
-      render();
+      // De server stuurt direct na `joined` een snapshot met `you`. De eerdere
+      // snapshot hoorde nog bij de anonieme verbinding en mag niet tekenen.
     } else if (msg.t === "error") {
       onError(msg);
     } else if (msg.t === "event") {
@@ -109,6 +155,7 @@
       return;
     }
     if (msg.code === "not_joined") {
+      store(STORE_TOKEN, null);
       store(STORE_ID, null);
       playerId = null;
       show("join");
@@ -123,6 +170,12 @@
   }
 
   function onEvent(msg) {
+    if (msg.name === "player_kicked" && msg.data && msg.data.id === playerId) {
+      removed = true;
+    }
+    if (msg.name === "lobby_cleared") {
+      removed = true;
+    }
     if (msg.name === "quiz_reset") {
       lastQuestionId = null;
       pendingChoice = null;
@@ -146,12 +199,23 @@
     el.joinButton.disabled = true;
     joining = true;
     store(STORE_NAME, name);
-    if (!socket.send({ t: "join", name: name, player_id: store(STORE_ID) })) {
+    var savedToken = store(STORE_TOKEN);
+    if (
+      !socket.send({
+        t: "join",
+        name: name,
+        reconnect_token: savedToken,
+        player_id: savedToken ? null : store(STORE_ID),
+      })
+    ) {
       el.joinButton.disabled = false;
       joining = false;
-      el.joinError.textContent = "Even geen verbinding. Probeer het zo nog eens.";
+      el.joinError.textContent =
+        "Even geen verbinding. Probeer het zo nog eens.";
     }
-    window.setTimeout(function () { el.joinButton.disabled = false; }, 2500);
+    window.setTimeout(function () {
+      el.joinButton.disabled = false;
+    }, 2500);
   });
 
   // --- antwoorden ---------------------------------------------------------
@@ -180,10 +244,17 @@
 
   el.estimateSubmit.addEventListener("click", submitEstimate);
   el.estimateInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") { event.preventDefault(); submitEstimate(); }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submitEstimate();
+    }
   });
-  el.estimateMinus.addEventListener("click", function () { stepEstimate(-1); });
-  el.estimatePlus.addEventListener("click", function () { stepEstimate(1); });
+  el.estimateMinus.addEventListener("click", function () {
+    stepEstimate(-1);
+  });
+  el.estimatePlus.addEventListener("click", function () {
+    stepEstimate(1);
+  });
 
   function stepEstimate(direction) {
     var current = parseFloat(el.estimateInput.value.replace(",", "."));
@@ -201,13 +272,15 @@
     timer.remaining = payload.remaining_ms;
     timer.total = payload.total_ms;
     timer.running = payload.running;
-    timer.at = (window.performance && performance.now) ? performance.now() : Date.now();
+    timer.at =
+      window.performance && performance.now ? performance.now() : Date.now();
     paintTimer();
   }
 
   function paintTimer() {
     if (el.screens.question.hidden) return;
-    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+    var now =
+      window.performance && performance.now ? performance.now() : Date.now();
     var left = timer.remaining - (timer.running ? now - timer.at : 0);
     var seconds = Math.max(0, Math.ceil(left / 1000));
     el.qTimer.textContent = timer.running ? seconds : "⏸";
@@ -231,29 +304,41 @@
 
     var you = state.you;
     if (!you) {
-      // Nog niet meegedaan, of door de host verwijderd.
-      if (!joining) {
-        // We wachten niet meer op een join-antwoord: je bent echt niet in de quiz.
-        if (playerId) {
-          store(STORE_ID, null);
-          playerId = null;
-          toast("De leiding heeft je uit de quiz gehaald.", "bad");
-        }
+      // Een snapshot zonder `you` kan tijdens een reconnect verouderd zijn.
+      // Alleen een expliciet verwijder-event mag de reconnect-gegevens wissen.
+      if (removed && playerId) {
+        store(STORE_TOKEN, null);
+        store(STORE_ID, null);
+        playerId = null;
+        removed = false;
+        toast("De leiding heeft je uit de quiz gehaald.", "bad");
+        show("join");
+      } else if (!playerId && !joining) {
         show("join");
       }
-      // Als we nog steeds aan het joinen zijn, toon niets (de lobby is te vroeg gekomen).
       return;
     }
     playerId = you.id;
     applyTimer(state.timer);
 
     switch (state.phase) {
-      case "LOBBY": renderLobby(you); break;
-      case "QUESTION": renderQuestion(you); break;
-      case "ANSWER_REVEAL": renderResult(you); break;
-      case "LEADERBOARD": renderStanding(you); break;
-      case "FINISHED": renderDone(you); break;
-      default: show("lobby");
+      case "LOBBY":
+        renderLobby(you);
+        break;
+      case "QUESTION":
+        renderQuestion(you);
+        break;
+      case "ANSWER_REVEAL":
+        renderResult(you);
+        break;
+      case "LEADERBOARD":
+        renderStanding(you);
+        break;
+      case "FINISHED":
+        renderDone(you);
+        break;
+      default:
+        show("lobby");
     }
   }
 
@@ -261,7 +346,8 @@
     el.lobbyName.textContent = you.name;
     var count = state.counts.players;
     el.lobbyCount.textContent = count;
-    el.lobbyCountLabel.textContent = count === 1 ? "speler doet mee" : "spelers doen mee";
+    el.lobbyCountLabel.textContent =
+      count === 1 ? "speler doet mee" : "spelers doen mee";
     lastQuestionId = null;
     pendingChoice = null;
     show("lobby");
@@ -304,7 +390,9 @@
     var isEstimate = q.type === "estimate";
     el.estimate.hidden = !isEstimate;
     el.answers.hidden = isEstimate;
-    el.estimateUnit.textContent = isEstimate ? "Jouw schatting in " + (q.unit || "eenheden") : "";
+    el.estimateUnit.textContent = isEstimate
+      ? "Jouw schatting in " + (q.unit || "eenheden")
+      : "";
 
     el.answers.innerHTML = "";
     if (isEstimate) return;
@@ -313,12 +401,16 @@
       var button = document.createElement("button");
       button.type = "button";
       button.className = "answer " + OPT_CLASS[index];
-      button.innerHTML = '<span class="answer__key"><span class="shape"></span><span></span></span>';
-      button.querySelector(".answer__key span:last-child").textContent = option.key;
+      button.innerHTML =
+        '<span class="answer__key"><span class="shape"></span><span></span></span>';
+      button.querySelector(".answer__key span:last-child").textContent =
+        option.key;
       var text = document.createElement("span");
       text.textContent = option.text;
       button.appendChild(text);
-      button.addEventListener("click", function () { submitChoice(index); });
+      button.addEventListener("click", function () {
+        submitChoice(index);
+      });
       el.answers.appendChild(button);
     });
   }
@@ -327,16 +419,23 @@
     var chosen = el.waitingChosen;
     if (q.type === "estimate") {
       chosen.className = "waiting__chosen";
-      chosen.textContent = "Jouw schatting: " + you.value + " " + (q.unit || "");
+      chosen.textContent =
+        "Jouw schatting: " + you.value + " " + (q.unit || "");
     } else {
       var option = (q.options || [])[you.choice];
       chosen.className = "waiting__chosen " + (OPT_CLASS[you.choice] || "");
-      chosen.textContent = option ? option.key + " — " + option.text : "Antwoord verstuurd";
+      chosen.textContent = option
+        ? option.key + " — " + option.text
+        : "Antwoord verstuurd";
     }
     var answers = state.answers || {};
     el.waitingSub.textContent = answers.expected
-      ? answers.received + " van de " + answers.expected +
-        (answers.received === 1 ? " spelers heeft geantwoord" : " spelers hebben geantwoord")
+      ? answers.received +
+        " van de " +
+        answers.expected +
+        (answers.received === 1
+          ? " spelers heeft geantwoord"
+          : " spelers hebben geantwoord")
       : "Wacht op het volgende scherm…";
     show("waiting");
   }
@@ -347,10 +446,12 @@
     var correct = you.last_correct;
     var points = you.last_points || 0;
 
-    el.screens.result.className = "screen result " + (correct ? "result--ok" : "result--bad");
+    el.screens.result.className =
+      "screen result " + (correct ? "result--ok" : "result--bad");
     if (correct) {
       el.resultIcon.textContent = points >= 900 ? "🚀" : "✅";
-      el.resultTitle.textContent = you.streak >= 3 ? "Juist! " + you.streak + " op rij!" : "Juist!";
+      el.resultTitle.textContent =
+        you.streak >= 3 ? "Juist! " + you.streak + " op rij!" : "Juist!";
     } else if (you.last_correct === null && !you.answered) {
       el.resultIcon.textContent = "😴";
       el.resultTitle.textContent = "Geen antwoord";
@@ -375,7 +476,11 @@
     addPill(el.resultMeta, "Totaal: " + fmt(you.score));
     addPill(el.resultMeta, "Plaats " + you.rank + "/" + you.total_players);
     if (you.streak >= 2) addPill(el.resultMeta, "🔥 " + you.streak + " op rij");
-    if (q.type === "estimate" && reveal.correct_value !== undefined && you.value !== null) {
+    if (
+      q.type === "estimate" &&
+      reveal.correct_value !== undefined &&
+      you.value !== null
+    ) {
       addPill(el.resultMeta, "Jij: " + you.value + " " + (reveal.unit || ""));
     }
     show("result");
@@ -393,10 +498,16 @@
     el.standOf.textContent = "van de " + you.total_players + " spelers";
     el.standScore.textContent = fmt(you.score) + " punten";
     var move = you.rank_change;
-    el.standDelta.textContent = move > 0
-      ? "▲ " + move + " plaats" + (move > 1 ? "en" : "") + " gestegen"
-      : move < 0 ? "▼ " + Math.abs(move) + " plaats" + (move < -1 ? "en" : "") + " gezakt"
-      : "Positie behouden";
+    el.standDelta.textContent =
+      move > 0
+        ? "▲ " + move + " plaats" + (move > 1 ? "en" : "") + " gestegen"
+        : move < 0
+          ? "▼ " +
+            Math.abs(move) +
+            " plaats" +
+            (move < -1 ? "en" : "") +
+            " gezakt"
+          : "Positie behouden";
     renderMiniBoard(el.standBoard, state.leaderboard || [], you.id);
     show("standing");
   }
@@ -410,7 +521,8 @@
     el.doneScore.textContent = fmt(you.score) + " punten";
     el.doneStats.innerHTML = "";
     addPill(el.doneStats, "✅ " + you.correct_count + " juist");
-    if (you.best_streak >= 2) addPill(el.doneStats, "🔥 beste reeks: " + you.best_streak);
+    if (you.best_streak >= 2)
+      addPill(el.doneStats, "🔥 beste reeks: " + you.best_streak);
     renderMiniBoard(el.doneBoard, (state.standings || []).slice(0, 5), you.id);
     show("done");
   }

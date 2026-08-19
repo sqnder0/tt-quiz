@@ -169,7 +169,9 @@ async def ws_play(ws: WebSocket) -> None:
             if kind == "join":
                 try:
                     player, reconnected = await game.join(
-                        message.get("name", ""), message.get("player_id")
+                        message.get("name", ""),
+                        reconnect_token=message.get("reconnect_token"),
+                        player_id=message.get("player_id"),
                     )
                 except ValueError as exc:
                     await hub.send_error(conn, str(exc), code="join_failed")
@@ -183,11 +185,13 @@ async def ws_play(ws: WebSocket) -> None:
                     {
                         "t": "joined",
                         "player_id": player.id,
+                        "reconnect_token": player.reconnect_token,
                         "name": player.name,
                         "reconnected": reconnected,
                     },
                 )
                 await hub.send_state_to(conn)
+                await hub.broadcast_state()
                 continue
 
             if kind == "submit_answer":

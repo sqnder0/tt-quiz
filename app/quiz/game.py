@@ -99,6 +99,7 @@ def sanitize_name(raw: str) -> str:
 @dataclass
 class Player:
     id: str
+    reconnect_token: str
     name: str
     joined_at: float
     connected: bool = True
@@ -230,11 +231,24 @@ class Game:
                 return candidate
             n += 1
 
-    async def join(self, raw_name: str, player_id: str | None = None) -> tuple[Player, bool]:
+    async def join(
+        self,
+        raw_name: str,
+        reconnect_token: str | None = None,
+        player_id: str | None = None,
+    ) -> tuple[Player, bool]:
         """Nieuwe speler of reconnect. Geeft (speler, was_reconnect) terug."""
         async with self._lock:
-            if player_id and player_id in self.players:
-                player = self.players[player_id]
+            player = next(
+                (
+                    candidate
+                    for candidate in self.players.values()
+                    if (reconnect_token and candidate.reconnect_token == reconnect_token)
+                    or (player_id and candidate.id == player_id)
+                ),
+                None,
+            )
+            if player is not None:
                 player.connected = True
                 player.last_seen = time.time()
                 # Naam mag bijgewerkt worden zolang we in de lobby zitten.
@@ -248,16 +262,19 @@ class Game:
                     raise ValueError("Geef een geldige naam in.")
                 if len(self.players) >= config.MAX_PLAYERS:
                     raise ValueError("De quiz zit vol. Vraag de leiding om hulp.")
-                # Altijd een verse server-side id: een client mag nooit zelf kiezen
-                # wie hij is, anders kan je met andermans id binnenwandelen.
+                # Zowel de interne id als het reconnect-token zijn server-side.
                 pid = uuid.uuid4().hex
-                player = Player(id=pid, name=self._unique_name(name), joined_at=time.time())
+                player = Player(
+                    id=pid,
+                    reconnect_token=uuid.uuid4().hex,
+                    name=self._unique_name(name),
+                    joined_at=time.time(),
+                )
                 self.players[pid] = player
                 reconnected = False
 
         if not reconnected:
             await self.notifier.broadcast_event("player_joined", {"name": player.name, "id": player.id})
-        await self.notifier.broadcast_state()
         return player, reconnected
 
     async def mark_disconnected(self, player_id: str) -> None:

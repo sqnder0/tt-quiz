@@ -49,6 +49,7 @@ class Client:
         self.events: list[str] = []
         self.errors: list[str] = []
         self.player_id: Optional[str] = None
+        self.reconnect_token: Optional[str] = None
         self.name: Optional[str] = None
         self._task: Optional[asyncio.Task] = None
         self._ready = asyncio.Event()
@@ -67,6 +68,7 @@ class Client:
                     self._ready.set()
                 elif kind == "joined":
                     self.player_id = message["player_id"]
+                    self.reconnect_token = message["reconnect_token"]
                     self.name = message["name"]
                 elif kind == "event":
                     self.events.append(message["name"])
@@ -105,7 +107,11 @@ class Player(Client):
         self.expected_points = 0
 
     async def join(self) -> None:
-        await self.send({"t": "join", "name": self.wanted_name, "player_id": self.player_id})
+        await self.send({
+            "t": "join",
+            "name": self.wanted_name,
+            "reconnect_token": self.reconnect_token,
+        })
         for _ in range(60):
             if self.player_id:
                 return
